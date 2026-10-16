@@ -26,7 +26,7 @@ async function loadPlayerProfile() {
     const stats = data.stats;
     const custom_stats = stats["minecraft:custom"];
 
-    const playtime = Math.round(custom_stats["minecraft:play_time"]/(3600*20))
+    const playtime = Math.floor(custom_stats["minecraft:play_time"]/(3600*20))
 
     // 3. Afficher les données reçues (adaptez les champs selon votre JSON)
     statsElement.innerHTML = `
