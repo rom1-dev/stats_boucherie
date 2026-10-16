@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <init charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil du joueur</title>
+    <!-- On réutilise le même style CSS global -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <p><a href="index.html">← Retour à la liste</a></p>
+    
+    <h1 id="player-title">Chargement...</h1>
+    
+    <div id="player-stats">
+        <!-- Les stats injectées par player.js arriveront ici -->
+    </div>
+
+    <!-- On charge le script spécifique en module avec defer -->
+    <script src="player.js" type="module" defer></script>
+</body>
+</html>
