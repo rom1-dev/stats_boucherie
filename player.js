@@ -23,10 +23,15 @@ async function loadPlayerProfile() {
         return;
     }
 
+    const stats = data.stats;
+    const custom_stats = stats["minecraft:custom"];
+
+    const playtime = Math.round(custom_stats["minecraft:play_time"]/(3600*20))
+
     // 3. Afficher les données reçues (adaptez les champs selon votre JSON)
     statsElement.innerHTML = `
-        <p><strong>UUID :</strong> ${data.uuid || "Inconnu"}</p>
-        <p><strong>Temps de jeu :</strong> ${data.playtime || "0"} heures</p>
+        <p><strong>Temps de jeu :</strong> ${playtime} heures</p>
+        <p><strong>Morts :</strong> ${custom_stats["minecraft:deaths"]}</p>
         <!-- Ajoutez ici d'autres statistiques de l'objet data -->
     `;
 }
