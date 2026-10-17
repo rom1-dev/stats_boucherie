@@ -1,4 +1,4 @@
-import { getData, is_name } from './api.js';
+import { getData, is_name, minecraft_stats_categories } from './api.js';
 
 function formaterPseudo(pseudo) {
     if (!pseudo) return "de";
@@ -21,7 +21,7 @@ async function loadPlayerProfile() {
     const playerName = urlParams.get("name");
 
     const titleElement = document.getElementById("player-title");
-    const statsElement = document.getElementById("player-stats");
+    const statsDiv = document.getElementById("player-stats");
 
     if (!playerName) {
         titleElement.textContent = "Aucun joueur spécifié.";
@@ -33,51 +33,44 @@ async function loadPlayerProfile() {
     titleElement.textContent = `Stats ${formaterPseudo(nameToShow)}`;
 
     // 2. Appeler l'API avec l'endpoint "players/nomdujoueur"
-    const data = await getData(`players/${encodeURIComponent(playerName)}`);
 
-    if (!data) {
-        statsElement.innerHTML = `<p class="error">Impossible de charger les statistiques de ce joueur.</p>`;
-        return;
+    // const playtime = Math.floor(getCustom("play_time")/(3600*20));
+
+    document.getElementById("skin-avatar").src = `https://minotar.net/helm/${playerName}/100.png`;
+    document.getElementById("skin-iso").src = `https://minotar.net/cube/${playerName}/100.png`;
+    document.getElementById("skin-body").src = `https://minotar.net/armor/body/${playerName}/150.png`;
+    document.getElementById("skin-bust").src = `https://minotar.net/armor/bust/${playerName}/150.png`;
+    document.getElementById("skin").src = `https://minotar.net/skin/${playerName}`;
+
+    for (const [categoryName, statsList] of Object.entries(minecraft_stats_categories)) {
+        
+        // Création du conteneur de la catégorie
+        const categoryDiv = document.createElement("div");
+        categoryDiv.classList.add("stats_div");
+
+        // Création du titre de la catégorie
+        const categoryTitle = document.createElement("h2");
+        categoryTitle.textContent = categoryName;
+        categoryDiv.appendChild(categoryTitle);
+
+        // Ajout de la div principale pour préserver l'ordre d'affichage
+        statsDiv.appendChild(categoryDiv);
+
+        // Récupération des données API en parallèle pour charger plus vite
+        const promises = Object.entries(statsList).map(async ([key, label]) => {
+            const apiResponse = await getData(`players/${playerName}/custom/${key}`);
+            const value = apiResponse ? apiResponse.value : 0;
+            
+            const stat = document.createElement("p");
+            stat.innerHTML = `<strong>${label} : </strong> ${value}`;
+            return stat;
+        });
+
+        // Attente du résultat de toutes les stats de cette catégorie et ajout dans le DOM
+        const statElements = await Promise.all(promises);
+        statElements.forEach(statEl => categoryDiv.appendChild(statEl));
     }
 
-    const stats = data.stats;
-
-    const getStat = (category, stat) => stats?.[`minecraft:${category}`]?.[`minecraft:${stat}`] ?? 0;
-    const createStatGetter = (category) => (stat) => getStat(category, stat);
-    const getCustom   = createStatGetter("custom");
-    const getCrafted  = createStatGetter("crafted");
-    const getMined    = createStatGetter("mined");
-    const getDropped  = createStatGetter("dropped");
-    const getBroken   = createStatGetter("broken");
-    const getKilled   = createStatGetter("killed");
-    const getKilledBy = createStatGetter("killed_by");
-    const getUsed     = createStatGetter("used");
-    const getPickedUp = createStatGetter("picked_up");
-
-    const playtime = Math.floor(getCustom("play_time")/(3600*20));
-
-    const avatarImg = document.getElementById("skin-avatar");
-    avatarImg.src = `https://minotar.net/helm/${playerName}/100.png`;
-
-    const isoImg = document.getElementById("skin-iso");
-    isoImg.src = `https://minotar.net/cube/${playerName}/100.png`;
-
-    const bodyImg = document.getElementById("skin-body");
-    bodyImg.src = `https://minotar.net/armor/body/${playerName}/150.png`;
-
-    const bustImg = document.getElementById("skin-bust");
-    bustImg.src = `https://minotar.net/armor/bust/${playerName}/150.png`;
-
-    const skinImg = document.getElementById("skin");
-    skinImg.src = `https://minotar.net/skin/${playerName}`;
-
-    // 3. Afficher les données reçues (adaptez les champs selon votre JSON)
-    statsElement.innerHTML = `
-        <p><strong>UUID :</strong> ${data.uuid}</p>
-        <p><strong>Temps de jeu :</strong> ${playtime} heures</p>
-        <p><strong>Morts :</strong> ${getCustom("deaths")}</p>
-        <!-- Ajoutez ici d'autres statistiques de l'objet data -->
-    `;
 }
 
 loadPlayerProfile();
