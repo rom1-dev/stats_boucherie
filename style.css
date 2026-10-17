@@ -1,6 +1,6 @@
 body {
     font-family: Arial, sans-serif;
-    max-width: 600px;
+    /* max-width: 600px; */
     margin: 40px auto;
     padding: 20px;
     background-color: #f4f4f9;
@@ -17,8 +17,7 @@ ul {
 
 li {
     background: #fff;
-    margin-bottom: 8px;
-    /* padding: 10px 15px; */
+    /* margin: 8px; */
     border-radius: 4px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
@@ -46,7 +45,18 @@ li a:hover {
 }
 
 #skin {
-    width: 500px;
+    width: 300px;
     image-rendering: pixelated; /* Pour les navigateurs modernes */
     image-rendering: crisp-edges; /* Pour une meilleure compatibilité avec certains navigateurs (Firefox) */
+}
+
+ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.item {
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
 }
