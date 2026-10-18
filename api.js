@@ -46,7 +46,7 @@ export function convertStatValue(statKey, rawValue) {
 
     // Si l'unité de déplacement est en point de damage (convertie en coeurs)
     if (unit === "cœurs") {
-        return Math.round(rawValue * 2) / 2;
+        return Math.ceil((rawValue/20) * 2) / 2;
     }
     
     // Pour toutes les autres stats
