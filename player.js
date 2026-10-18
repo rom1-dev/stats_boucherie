@@ -1,4 +1,4 @@
-import { getData, is_name, minecraft_stats_categories } from './api.js';
+import { getData, is_name, minecraft_stats_categories, minecraftStatsUnits, convertStatValue, formaterNombre } from './api.js';
 
 function formaterPseudo(pseudo) {
     if (!pseudo) return "de";
@@ -28,14 +28,11 @@ async function loadPlayerProfile() {
         return;
     }
     
-    const nameToShow = is_name(playerName)? playerName : "Joueur Inconnu..."
+    const nameToShow = is_name(playerName) ? playerName : "Joueur Inconnu...";
 
     titleElement.textContent = `Stats ${formaterPseudo(nameToShow)}`;
 
-    // 2. Appeler l'API avec l'endpoint "players/nomdujoueur"
-
-    // const playtime = Math.floor(getCustom("play_time")/(3600*20));
-
+    // Images du skin
     document.getElementById("skin-avatar").src = `https://minotar.net/helm/${playerName}/100.png`;
     document.getElementById("skin-iso").src = `https://minotar.net/cube/${playerName}/100.png`;
     document.getElementById("skin-body").src = `https://minotar.net/armor/body/${playerName}/150.png`;
@@ -53,24 +50,40 @@ async function loadPlayerProfile() {
         categoryTitle.textContent = categoryName;
         categoryDiv.appendChild(categoryTitle);
 
-        // Ajout de la div principale pour préserver l'ordre d'affichage
-        statsDiv.appendChild(categoryDiv);
-
-        // Récupération des données API en parallèle pour charger plus vite
+        // Récupération des données API en parallèle
         const promises = Object.entries(statsList).map(async ([key, label]) => {
             const apiResponse = await getData(`players/${playerName}/custom/${key}`);
-            const value = apiResponse ? apiResponse.value : 0;
+            const rawValue = apiResponse ? apiResponse.value : 0;
+
+            // Si la valeur est nulle / 0, on retourne null pour signifier qu'elle ne doit pas être affichée
+            if (!rawValue || rawValue === 0) {
+                return null;
+            }
+
+            let unit = ' ' + (minecraftStatsUnits[key] || '');
+            const value = convertStatValue(key, rawValue);
+
+            if (unit.endsWith('s') && value<=1) {
+                unit=unit.slice(0, -1)
+            }
             
             const stat = document.createElement("p");
-            stat.innerHTML = `<strong>${label} : </strong> ${value}`;
+            stat.innerHTML = `<strong>${label} : </strong> ${formaterNombre(value)}${unit}`;
             return stat;
         });
 
-        // Attente du résultat de toutes les stats de cette catégorie et ajout dans le DOM
+        // Attente de toutes les promesses de la catégorie
         const statElements = await Promise.all(promises);
-        statElements.forEach(statEl => categoryDiv.appendChild(statEl));
-    }
 
+        // On filtre pour ne garder que les éléments non nuls
+        const validStatElements = statElements.filter(el => el !== null);
+
+        // Si la catégorie contient au moins une stat non nulle, on l'ajoute au DOM
+        if (validStatElements.length > 0) {
+            validStatElements.forEach(statEl => categoryDiv.appendChild(statEl));
+            statsDiv.appendChild(categoryDiv);
+        }
+    }
 }
 
 loadPlayerProfile();

@@ -1,62 +1,183 @@
-body {
-    font-family: Arial, sans-serif;
-    /* max-width: 600px; */
-    margin: 40px auto;
-    padding: 20px;
-    background-color: #f4f4f9;
-}
-
-h1 {
-    color: #333;
-}
-
-ul {
-    list-style-type: none;
+/* ==========================================================================
+   RESET & BASE
+   ========================================================================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
     padding: 0;
 }
 
-li {
-    background: #fff;
-    /* margin: 8px; */
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+body {
+    background-color: #121214;
+    color: #e1e1e6;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif;
+    max-width: 1200px; /* Augmenté pour bien accueillir les cartes flexbox */
+    margin: 0 auto;
+    padding: 40px 20px;
 }
+
+h1 {
+    color: #ffffff;
+    font-size: 2rem;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+/* ==========================================================================
+   LISTES DE JOUEURS (li, a)
+   ========================================================================== */
+ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    list-style-type: none;
+    padding: 0;
+    justify-content: center;
+}
+
+li {
+    background: #202024;
+    border: 1px solid #29292e;
+    border-radius: 8px;
+    overflow: hidden; /* Empêche le lien de dépasser des bords arrondis */
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+li:hover {
+    transform: translateY(-2px);
+    border-color: #04d361; /* Reprend la touche de vert des stats */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Le secret : le padding est mis sur le lien, et display: block l'étend à tout le li */
+li a {
+    display: block;
+    padding: 14px 24px; /* Ajustez cette valeur pour rendre le bouton plus ou moins grand */
+    color: #e1e1e6;
+    text-decoration: none;
+    font-weight: 500;
+    text-align: center;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+li a:hover {
+    background-color: #29292e; /* Fond légèrement plus clair au survol du bouton */
+    color: #04d361;
+}
+
+/* ==========================================================================
+   SECTION STATISTIQUES JOUEUR (#player-stats, .stats_div)
+   ========================================================================== */
+#player-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    padding: 20px 0;
+}
+
+.stats_div {
+    background: #202024;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #29292e;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    width: 300px; /* Légèrement élargi pour une meilleure lisibilité */
+    flex: 1 1 280px; /* S'adapte proprement sur les écrans mobiles */
+    max-width: 360px;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stats_div:hover {
+    transform: translateY(-4px);
+    border-color: #04d361;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+}
+
+.stats_div h2 {
+    font-size: 1.15rem;
+    text-align: center;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #29292e;
+    background: none;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+}
+
+.stats_div p {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 10px 0;
+    font-size: 0.9rem;
+    color: #a8a8b3;
+}
+
+.stats_div p span {
+    color: #ffffff;
+    font-weight: 600;
+    background-color: #121214;
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid #29292e;
+}
+
+/* ==========================================================================
+   PROFIL DU JOUEUR & AVATARS (MINOTAR)
+   ========================================================================== */
+
+/* Conteneur global pour regrouper les images du profil */
+.player-profile-header {
+    background: #202024;
+    border: 1px solid #29292e;
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Style de base pour toutes les images Minotar avec rendu pixel art propre */
+.player-profile-header img {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    transition: transform 0.2s ease;
+}
+
+.player-profile-header img:hover {
+    transform: scale(1.05);
+}
+
+/* Style spécifique pour chaque type d'affichage si besoin */
+
+#skin-body, #skin-bust, #skin-avatar, #skin-iso, #skin {
+    /* Mettent en valeur le rendu 3D de l'armure/corps */
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+}
+
+#skin {
+    width: 150px; /* Ajustez selon la taille souhaitée pour le skin à plat */
+    height: auto;
+}
+
+/* ==========================================================================
+   ÉLÉMENTS SPÉCIFIQUES & UTILITAIRES
+   ========================================================================== */
 
 .error {
-    color: red;
-}
-
-/* C'est ici que la magie opère : */
-li a {
-  display: block;        /* Transforme le lien en bloc (prend toute la largeur) */
-  padding: 15px 20px;    /* Mettez le padding (espace interne) sur le 'a', PAS sur le 'li' ! */
-  color: #333;           /* Style de votre texte */
-  text-decoration: none; /* Enlève le soulignement du lien */
-  transition: background-color 0.2s ease;
-}
-
-/* Optionnel : ajouter un effet au survol de toute la zone */
-li a:hover {
-  background-color: #e0e0e0;
+    color: #f75a68; /* Rouge moderne plus lisible sur fond sombre */
+    background-color: rgba(247, 90, 104, 0.1);
+    padding: 10px 14px;
+    border-radius: 6px;
+    border: 1px solid rgba(247, 90, 104, 0.2);
+    font-weight: 500;
 }
 
 .hidden {
     display: none !important;
-}
-
-#skin {
-    width: 300px;
-    image-rendering: pixelated; /* Pour les navigateurs modernes */
-    image-rendering: crisp-edges; /* Pour une meilleure compatibilité avec certains navigateurs (Firefox) */
-}
-
-ul {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.item {
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
 }

@@ -64,7 +64,7 @@ export const minecraft_stats_categories = {
         "walk_on_water_one_cm": "Distance marchée sur l'eau",
         "fish_caught": "Poissons pêchés"
     },
-    "Combat & Dégâts": {
+    "Combat & Cœurs": {
         "damage_dealt": "Dégâts infligés",
         "mob_kills": "Créatures tuées",
         "player_kills": "Joueurs tués",
@@ -110,10 +110,129 @@ export const minecraft_stats_categories = {
         "use_cauldron": "Chaudrons utilisés",
         "fill_cauldron": "Chaudrons remplis",
         "play_record": "Disques de musique joués",
-        "play_noteblock": "Blocs sonores joués",
-        "tune_noteblock": "Blocs sonores accordés",
+        "play_noteblock": "Blocs musicaux joués",
+        "tune_noteblock": "Blocs musicaux accordés",
         "bell_ring": "Cloches sonnées",
         "eat_cake_slice": "Parts de gâteau mangées",
         "interact_with_beacon": "Interactions avec une balise"
     }
+}
+
+export const minecraftStatsUnits = {
+    // Stats Générales
+    "deaths": "",
+    "play_time": "heures",
+    
+    // Stats Funs
+    "time_since_rest": "heures",
+    "sleep_in_bed": "",
+    "time_since_death": "heures",
+    "sneak_time": "heures",
+    "jump": "",
+    "drop": "",
+    "trigger_trapped_chest": "",
+    "leave_game": "",
+    "total_world_time": "heures",
+    
+    // Déplacements (en cm de base)
+    "walk_one_cm": "km",
+    "sprint_one_cm": "km",
+    "aviate_one_cm": "km",
+    "fly_one_cm": "km",
+    "boat_one_cm": "km",
+    "horse_one_cm": "km",
+    "strider_one_cm": "km",
+    "minecart_one_cm": "km",
+    "climb_one_cm": "km",
+    "crouch_one_cm": "km",
+    "fall_one_cm": "km",
+    "happy_ghast_one_cm": "km",
+    
+    // Milieu Aquatique
+    "swim_one_cm": "km",
+    "walk_under_water_one_cm": "km",
+    "walk_on_water_one_cm": "km",
+    "fish_caught": "",
+    
+    // Combat & cœurs
+    "damage_dealt": "cœurs",
+    "mob_kills": "",
+    "player_kills": "",
+    "damage_taken": "cœurs",
+    "damage_blocked_by_shield": "cœurs",
+    "damage_absorbed": "cœurs",
+    "damage_resisted": "cœurs",
+    "damage_dealt_absorbed": "cœurs",
+    "raid_win": "",
+    "raid_trigger": "",
+    
+    // Interactions & Blocs
+    "interact_with_smithing_table": "",
+    "enchant_item": "",
+    "interact_with_crafting_table": "",
+    "interact_with_stonecutter": "",
+    "interact_with_furnace": "",
+    "interact_with_smoker": "",
+    "interact_with_campfire": "",
+    "interact_with_brewingstand": "",
+    "interact_with_loom": "",
+    "interact_with_anvil": "",
+    "interact_with_cartography_table": "",
+    "interact_with_grindstone": "",
+    "interact_with_blast_furnace": "",
+    "interact_with_lectern": "",
+    
+    // Stockage
+    "open_chest": "",
+    "open_shulker_box": "",
+    "open_enderchest": "",
+    "open_barrel": "",
+    "inspect_hopper": "",
+    "inspect_dispenser": "",
+    "inspect_dropper": "",
+    
+    // Vie quotidienne & PNJ
+    "traded_with_villager": "",
+    "talked_to_villager": "",
+    "animals_bred": "",
+    "pot_flower": "",
+    "clean_banner": "",
+    "use_cauldron": "",
+    "fill_cauldron": "",
+    "play_record": "",
+    "play_noteblock": "",
+    "tune_noteblock": "",
+    "bell_ring": "",
+    "eat_cake_slice": "",
+    "interact_with_beacon": ""
+};
+
+export function convertStatValue(statKey, rawValue) {
+    const unit = minecraftStatsUnits[statKey];
+    
+    if (!unit) {
+        return rawValue;
+    }
+
+    // Si l'unité est le temps (converti en heures)
+    if (unit === "heures") {
+        return Math.ceil((rawValue / (3600 * 20)) * 10) / 10;
+    }
+    
+    // Si l'unité de déplacement est en centimètres (convertie en km avec 2 décimales)
+    if (unit === "km") {
+        return Number((rawValue / 100000).toFixed(2));
+    }
+
+    // Si l'unité de déplacement est en point de damage (convertie en coeurs)
+    if (unit === "cœurs") {
+        return Math.round(rawValue * 2) / 2;
+    }
+    
+    // Pour toutes les autres stats
+    return rawValue;
+}
+
+export function formaterNombre(nombre) {
+    return nombre.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
