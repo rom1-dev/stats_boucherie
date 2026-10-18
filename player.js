@@ -1,36 +1,21 @@
-import { getData, is_name, minecraft_stats_categories, minecraftStatsUnits, convertStatValue, formaterNombre } from './api.js';
-
-function formaterPseudo(pseudo) {
-    if (!pseudo) return "de";
-
-    // 1. Normalise la chaîne pour supprimer les accents (ex: "Élise" -> "Elise")
-    const pseudoSansAccent = pseudo.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-    // 2. Vérifie si le premier caractère est une voyelle (insensible à la casse)
-    const commenceParVoyelle = /^[aeiouy]/i.test(pseudoSansAccent);
-
-    // 3. Retourne le résultat avec la bonne préfixation
-    return commenceParVoyelle ? `d'${pseudo}` : `de ${pseudo}`;
-}
-
-
+import { getData, minecraft_stats_categories, minecraftStatsUnits, convertStatValue, formaterNombre, formaterPseudo } from './api.js';
 
 async function loadPlayerProfile() {
     // 1. Récupérer le paramètre "name" présent dans l'URL (ex: player.html?name=MonSuperPseudo)
     const urlParams = new URLSearchParams(window.location.search);
     const playerName = urlParams.get("name");
+    const playerUuid = urlParams.get("uuid");
 
     const titleElement = document.getElementById("player-title");
     const statsDiv = document.getElementById("player-stats");
 
-    if (!playerName) {
+    if (!playerName && !playerUuid) {
         titleElement.textContent = "Aucun joueur spécifié.";
+        document.querySelector(".player-profile-header").classList.add("hidden");
         return;
     }
-    
-    const nameToShow = is_name(playerName) ? playerName : "Joueur Inconnu...";
 
-    titleElement.textContent = `Stats ${formaterPseudo(nameToShow)}`;
+    titleElement.textContent = `Stats ${formaterPseudo(playerName)}`;
 
     // Images du skin
     document.getElementById("skin-avatar").src = `https://minotar.net/helm/${playerName}/100.png`;
@@ -52,7 +37,7 @@ async function loadPlayerProfile() {
 
         // Récupération des données API en parallèle
         const promises = Object.entries(statsList).map(async ([key, label]) => {
-            const apiResponse = await getData(`players/${playerName}/custom/${key}`);
+            const apiResponse = await getData(`players/${playerUuid}/custom/${key}`);
             const rawValue = apiResponse ? apiResponse.value : 0;
 
             // Si la valeur est nulle / 0, on retourne null pour signifier qu'elle ne doit pas être affichée

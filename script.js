@@ -1,4 +1,4 @@
-import { getData, is_name } from './api.js';
+import { getData } from './api.js';
 
 async function main() {
     const listElement = document.getElementById("player-list");
@@ -12,26 +12,26 @@ async function main() {
 
     const players = res.players;
 
-    const sortedNames = players.map(player => {
-        return player.name || player.uuid || "zzz_None";
-    }).sort((a, b) => {
-        const keyA = is_name(a) ? a.toLowerCase() : "zzz";
-        const keyB = is_name(b) ? b.toLowerCase() : "zzz";
-        return keyA.localeCompare(keyB);
+    // === TRI DES JOUEURS PAR NOM (ALPHABÉTIQUE) ===
+    players.sort((a, b) => {
+        const nameA = a.name || "zzzz";
+        const nameB = b.name || "zzzz";
+        return nameA.localeCompare(nameB, 'fr', { sensitivity: 'base' });
     });
 
     // Affichage dans le HTML
     listElement.innerHTML = "";
-    if (sortedNames.length === 0) {
+    if (players.length === 0) {
         listElement.innerHTML = "<li>Aucun joueur trouvé.</li>";
         return;
     }
 
-    sortedNames.forEach(name => {
+    players.forEach(player => {
         const li = document.createElement("li");
         const a = document.createElement("a");
-        a.href = `player.html?name=${name}`
-        a.textContent = name.length!==36? name : "Joueur Inconnu..."
+        const playerName = player.name || "Joueur Inconnu...";
+        a.href = `player.html?uuid=${player.uuid}&name=${playerName}`
+        a.textContent = playerName;
         li.appendChild(a)
         li.classList.add("item");
         listElement.appendChild(li);

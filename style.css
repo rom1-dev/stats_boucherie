@@ -24,6 +24,36 @@ h1 {
 }
 
 /* ==========================================================================
+   STYLE DES CHAMPS DE SAISIE (INPUT)
+   ========================================================================== */
+input[type="text"] {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    color: #e1e1e6; /* Texte clair pour contraster avec le fond sombre */
+    background-color: #202024; /* Même fond que vos cartes (.stats_div, li) */
+    border: 1px solid #29292e; /* Bordure discrète assortie à vos cartes */
+    border-radius: 8px;
+    outline: none;
+    transition: all 0.2s ease;
+    margin-bottom: 20px;
+}
+
+/* Style du texte indicatif (placeholder) */
+input[type="text"]::placeholder {
+    color: #7c7c8a; /* Un gris plus doux, adapté au fond sombre */
+    opacity: 1;
+}
+
+/* Style lorsque l'utilisateur clique dans l'input (Focus) */
+input[type="text"]:focus {
+    border-color: #04d361; /* Reprend le vert dynamique de vos autres éléments interactifs */
+    background-color: #121214; /* Fond légèrement plus sombre pour marquer l'action */
+    box-shadow: 0 0 0 3px rgba(4, 211, 97, 0.15); /* Effet de lueur vert subtil */
+}
+
+/* ==========================================================================
    LISTES DE JOUEURS (li, a)
    ========================================================================== */
 ul {
@@ -163,6 +193,34 @@ li a:hover {
 #skin {
     width: 150px; /* Ajustez selon la taille souhaitée pour le skin à plat */
     height: auto;
+}
+
+/* ==========================================================================
+   BOUTON DE RETOUR (.back-btn)
+   ========================================================================== */
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #c4c4cc;
+    background-color: #202024;
+    border: 1px solid #29292e;
+    border-radius: 8px;
+    text-decoration: none;
+    margin-bottom: 20px;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+
+/* Animation au survol : léger décalage vers la gauche */
+.back-btn:hover {
+    color: #ffffff;
+    border-color: #04d361; /* Rappel du vert d'accentuation */
+    background-color: #29292e;
+    transform: translateX(-4px); /* Donne l'impression de revenir en arrière */
 }
 
 /* ==========================================================================

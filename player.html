@@ -9,17 +9,25 @@
 </head>
 <body>
 
-    <p><a href="index.html">← Retour à la liste</a></p>
+    <p><a href="index.html" class="back-btn">← Retour à la liste des joueurs</a></p>
     
     <h1 id="player-title">Chargement...</h1>
 
     <div class="player-profile-header">
-        <img id="skin-avatar" alt="Avatar du joueur" />
-        <img id="skin-iso" alt="Tête du joueur" />
-        <img id="skin-body" alt="Corps du joueur" />
-        <img id="skin-bust" alt="Buste du joueur" />
-        <img id="skin" alt="skin du joueur" />
+        <img id="skin-avatar" alt="Avatar du joueur" onerror="imageErreur(this)"/>
+        <img id="skin-iso" alt="Tête du joueur" onerror="imageErreur(this)"/>
+        <img id="skin-body" alt="Corps du joueur" onerror="imageErreur(this)"/>
+        <img id="skin-bust" alt="Buste du joueur" onerror="imageErreur(this)"/>
+        <img id="skin" alt="skin du joueur" onerror="imageErreur(this)"/>
     </div>
+
+    <script>
+        function imageErreur(img) {
+            img.parentElement.classList.add("hidden");
+            // Éviter une boucle infinie si l'image de secours échoue aussi
+            img.onerror = null; 
+        }
+    </script>
     
     
     <div id="player-stats">

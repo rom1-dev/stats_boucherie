@@ -27,6 +27,49 @@ export function is_name(name) {
     return name.length!==36;
 }
 
+export function convertStatValue(statKey, rawValue) {
+    const unit = minecraftStatsUnits[statKey];
+    
+    if (!unit) {
+        return rawValue;
+    }
+
+    // Si l'unité est le temps (converti en heures)
+    if (unit === "heures") {
+        return Math.ceil((rawValue / (3600 * 20)) * 10) / 10;
+    }
+    
+    // Si l'unité de déplacement est en centimètres (convertie en km avec 2 décimales)
+    if (unit === "km") {
+        return Number((rawValue / 100000).toFixed(2));
+    }
+
+    // Si l'unité de déplacement est en point de damage (convertie en coeurs)
+    if (unit === "cœurs") {
+        return Math.round(rawValue * 2) / 2;
+    }
+    
+    // Pour toutes les autres stats
+    return rawValue;
+}
+
+export function formaterNombre(nombre) {
+    return nombre.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
+export function formaterPseudo(pseudo) {
+    if (!pseudo) return "de";
+
+    // 1. Normalise la chaîne pour supprimer les accents (ex: "Élise" -> "Elise")
+    const pseudoSansAccent = pseudo.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    // 2. Vérifie si le premier caractère est une voyelle (insensible à la casse)
+    const commenceParVoyelle = /^[aeiouy]/i.test(pseudoSansAccent);
+
+    // 3. Retourne le résultat avec la bonne préfixation
+    return commenceParVoyelle ? `d'${pseudo}` : `de ${pseudo}`;
+}
+
 
 export const minecraft_stats_categories = {
     "Stats Générales": {
@@ -37,7 +80,7 @@ export const minecraft_stats_categories = {
         "time_since_rest": "Temps depuis le dernier repos",
         "sleep_in_bed": "Nuits passées dans un lit",
         "time_since_death": "Temps depuis la dernière mort",
-        "sneak_time": "Temps en accroupissement",
+        "sneak_time": "Temps accroupi",
         "jump": "Sauts",
         "drop": "Objets lâchés",
         "trigger_trapped_chest": "Coffres piégés déclenchés",
@@ -56,7 +99,7 @@ export const minecraft_stats_categories = {
         "climb_one_cm": "Distance grimpée",
         "crouch_one_cm": "Distance accroupie",
         "fall_one_cm": "Distance de chute",
-        "happy_ghast_one_cm": "Distance sur un Happy Ghast"
+        "happy_ghast_one_cm": "Distance en Happy Ghast"
     },
     "Milieu Aquatique": {
         "swim_one_cm": "Distance nagée",
@@ -207,32 +250,14 @@ export const minecraftStatsUnits = {
     "interact_with_beacon": ""
 };
 
-export function convertStatValue(statKey, rawValue) {
-    const unit = minecraftStatsUnits[statKey];
-    
-    if (!unit) {
-        return rawValue;
-    }
-
-    // Si l'unité est le temps (converti en heures)
-    if (unit === "heures") {
-        return Math.ceil((rawValue / (3600 * 20)) * 10) / 10;
-    }
-    
-    // Si l'unité de déplacement est en centimètres (convertie en km avec 2 décimales)
-    if (unit === "km") {
-        return Number((rawValue / 100000).toFixed(2));
-    }
-
-    // Si l'unité de déplacement est en point de damage (convertie en coeurs)
-    if (unit === "cœurs") {
-        return Math.round(rawValue * 2) / 2;
-    }
-    
-    // Pour toutes les autres stats
-    return rawValue;
-}
-
-export function formaterNombre(nombre) {
-    return nombre.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+export const statsCategories = {
+    "minecraft:picked_up": "Objets ramassés",
+    "minecraft:used": "Objets utilisés",
+    "minecraft:crafted": "Objets fabriqués",
+    "minecraft:broken": "Objets cassés",
+    "minecraft:custom": "Statistiques générales",
+    "minecraft:killed_by": "Morts par",
+    "minecraft:killed": "Créatures tuées",
+    "minecraft:dropped": "Objets lâchés",
+    "minecraft:mined": "Blocs minés"
 }
