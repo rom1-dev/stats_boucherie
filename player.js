@@ -117,6 +117,7 @@ async function loadPlayerProfile() {
 
                 const labelSpan = document.createElement("span");
                 labelSpan.textContent = statData.label;
+                labelSpan.style.marginRight = "10px";
                 leftContainer.appendChild(labelSpan);
 
                 const strongVal = document.createElement("strong");
