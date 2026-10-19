@@ -30,9 +30,25 @@ async function main() {
         const li = document.createElement("li");
         const a = document.createElement("a");
         const playerName = player.name || "Joueur Inconnu...";
-        a.href = `player.html?uuid=${player.uuid}&name=${playerName}`
-        a.textContent = playerName;
-        li.appendChild(a)
+        a.href = `player.html?uuid=${player.uuid}&name=${playerName}`;
+
+        // Image de la tête Minotar avec gestion d'erreur de chargement
+        const img = document.createElement("img");
+        img.src = `https://minotar.net/helm/${playerName}/100.png`;
+        img.alt = `Tête de ${playerName}`;
+        img.classList.add("player-avatar-head");
+        img.onerror = function() {
+            this.onerror = null; // Empêche une boucle infinie si l'image de Steve échoue aussi
+            this.src = "https://minotar.net/helm/MHF_Steve/100.png";
+        };
+
+        const span = document.createElement("span");
+        span.textContent = playerName;
+
+        a.appendChild(img);
+        a.appendChild(span);
+        
+        li.appendChild(a);
         li.classList.add("item");
         listElement.appendChild(li);
     });

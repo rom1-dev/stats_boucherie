@@ -355,6 +355,41 @@ li a:hover {
 }
 
 /* ==========================================================================
+   AVATARS / TÊTES DANS LES LISTES ET RANKINGS
+   ========================================================================== */
+.player-avatar-head {
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
+    border-radius: 4px;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    flex-shrink: 0;
+}
+
+/* Alignement dans la liste d'accueil (li a) */
+ul li a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* Alignement dans le Hall of Fame */
+.hof-player-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #04d361;
+    text-decoration: none;
+    vertical-align: middle;
+}
+
+.hof-player-link:hover {
+    text-decoration: underline;
+}
+
+/* ==========================================================================
    BOUTONS DE NAVIGATION (.nav-btn, .back-btn)
    ========================================================================== */
 .nav-btn {

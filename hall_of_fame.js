@@ -21,6 +21,14 @@ async function loadHallOfFame() {
             continue; // Ignore si aucun joueur n'est disponible
         }
 
+        // EXCLUSION DES JOUEURS AYANT 0 OU PAS DE VALEUR
+        const activePlayers = statRanking.players.filter(player => (player.value || 0) > 0);
+        
+        // Si aucun joueur n'a réalisé cette action, on passe à la statistique suivante
+        if (activePlayers.length === 0) {
+            continue;
+        }
+
         // Détermination du titre de la statistique
         let statTitle = statRanking.stat || statRanking.path || statRanking.category;
         const baseCategory = statRanking.category ? statRanking.category.replace("minecraft:", "") : "";
@@ -46,8 +54,8 @@ async function loadHallOfFame() {
         // Clé utile pour l'unité / conversion
         const statKeyForUnit = statRanking.stat ? statRanking.stat.replace("minecraft:", "") : (statRanking.path ? statRanking.path.replace("custom/", "") : baseCategory);
 
-        // 1. Calcul du total global de tous les joueurs pour cette statistique
-        const grandTotalRaw = statRanking.players.reduce((sum, player) => sum + (player.value || 0), 0);
+        // 1. Calcul du total global basé uniquement sur les joueurs actifs (> 0)
+        const grandTotalRaw = activePlayers.reduce((sum, player) => sum + (player.value || 0), 0);
         let totalUnit = ' ' + (minecraftStatsUnits[statKeyForUnit] || '');
         let convertedTotal = convertStatValue(statKeyForUnit, grandTotalRaw);
 
@@ -63,19 +71,19 @@ async function loadHallOfFame() {
         titleEl.textContent = statTitle;
         cardDiv.appendChild(titleEl);
 
-        // Affichage du total global aligné grâce à la structure flex existante (.stats_div p)
+        // Affichage du total global
         const totalP = document.createElement("p");
         totalP.style.fontStyle = "italic";
-        totalP.style.borderBottom = "1px solid #29292e"; // Optionnel : petite démarcation propre avec le podium
+        totalP.style.borderBottom = "1px solid #29292e";
         totalP.style.paddingBottom = "8px";
         totalP.style.marginBottom = "8px";
         totalP.innerHTML = `<span>🌍 Total du serveur :</span> <strong>${formaterNombre(convertedTotal)}${totalUnit}</strong>`;
         cardDiv.appendChild(totalP);
 
-        // 2. Extraction uniquement du Top 3 pour l'affichage des podiums
-        const top3Players = statRanking.players.slice(0, 3);
+        // 2. Extraction du Top 3 parmi les joueurs actifs (la liste sera naturellement incomplète si < 3 joueurs ont > 0)
+        const topPlayers = activePlayers.slice(0, 3);
 
-        top3Players.forEach(player => {
+        topPlayers.forEach(player => {
             const p = document.createElement("p");
             const playerUuid = player.uuid;
             const playerName = player.name || "Joueur Inconnu...";
@@ -93,7 +101,37 @@ async function loadHallOfFame() {
             else if (player.rank === 2) medal = "🥈";
             else if (player.rank === 3) medal = "🥉";
 
-            p.innerHTML = `<span>${medal} - <a href="player.html?uuid=${playerUuid}&name=${playerName}" style="color: #04d361; text-decoration: none;">${playerName}</a></span> <strong>${formaterNombre(convertedValue)}${unit}</strong>`;
+            const avatarUrl = `https://minotar.net/helm/${playerName}/100.png`;
+
+            // Création propre des éléments avec gestion d'erreur Steve pour l'avatar
+            const a = document.createElement("a");
+            a.href = `player.html?uuid=${playerUuid}&name=${playerName}`;
+            a.className = "hof-player-link";
+
+            const img = document.createElement("img");
+            img.src = avatarUrl;
+            img.alt = playerName;
+            img.className = "player-avatar-head";
+            img.onerror = function() {
+                this.onerror = null;
+                this.src = "https://minotar.net/helm/MHF_Steve/100.png";
+            };
+
+            const spanName = document.createElement("span");
+            spanName.textContent = playerName;
+
+            a.appendChild(img);
+            a.appendChild(spanName);
+
+            const spanContainer = document.createElement("span");
+            spanContainer.innerHTML = `${medal} - `;
+            spanContainer.appendChild(a);
+
+            const strongVal = document.createElement("strong");
+            strongVal.textContent = `${formaterNombre(convertedValue)}${unit}`;
+
+            p.appendChild(spanContainer);
+            p.appendChild(strongVal);
             
             cardDiv.appendChild(p);
         });

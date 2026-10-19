@@ -124,7 +124,7 @@ export const minecraft_custom_categories = {
         "damage_blocked_by_shield": "Dégâts bloqués par un bouclier",
         "damage_absorbed": "Dégâts absorbés",
         "damage_resisted": "Dégâts résistés",
-        "damage_dealt_absorbed": "Dégâts infligés absorbés",
+        "damage_dealt_absorbed": "Dégâts sur absorption",
         "raid_win": "Raids gagnés",
         "raid_trigger": "Raids déclenchés"
     },
