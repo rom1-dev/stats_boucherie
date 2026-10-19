@@ -1,4 +1,4 @@
-import { getData, minecraft_custom_categories, minecraftStatsUnits, convertStatValue, formaterNombre, formaterLabel, formaterPseudo, statsCategories, fullCategories } from './api.js';
+import { getData, minecraft_custom_categories, minecraftStatsUnits, convertStatValue, formaterNombre, formaterLabel, formaterPseudo, statsCategories } from './api.js';
 
 async function loadPlayerProfile() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -86,28 +86,38 @@ async function loadPlayerProfile() {
 
             let hasValidStats = false;
             const items = [];
+            const statsArray = []; // Tableau temporaire pour stocker et trier les stats
 
-            // 1. On récupère les entrées et on les trie par ordre décroissant de la valeur
-            const categoryData = fullCategories[category] || {};
-            const sortedEntries = Object.entries(categoryData).sort((a, b) => {
-                // a[0] et b[0] sont les clés/valeurs selon votre structure, on convertit en nombre pour un tri numérique correct
-                return Number(b[0]) - Number(a[0]); 
-            });
+            const data = await getData(`players/${playerUuid}/${category}`);
+            const { stats } = data;
 
-            // 2. On boucle sur le tableau trié
-            for (const [value, label] of sortedEntries) {
-                if (value !== "0") {
+            // 1. Récupération des données dans un tableau
+            for (const [x, value] of Object.entries(stats || {})) {
+                const label = x.replace("minecraft:", "");
+                if (value !== "test") {
                     hasValidStats = true;
                     const formattedLabel = formaterLabel(label);
 
-                    const statItem = document.createElement("div");
-                    statItem.classList.add("flat-stat-item");
-                    statItem.innerHTML = `<span>${formattedLabel}</span> <strong>${formaterNombre(value)}</strong>`;
-                    
-                    flatGrid.appendChild(statItem);
-                    items.push({ element: statItem, text: formattedLabel.toLowerCase() });
+                    statsArray.push({
+                        label: formattedLabel,
+                        rawValue: Number(value), // Conversion en nombre pour un tri correct
+                        text: formattedLabel.toLowerCase()
+                    });
                 }
             }
+
+            // 2. Tri du tableau par ordre décroissant de la valeur
+            statsArray.sort((a, b) => b.rawValue - a.rawValue);
+
+            // 3. Création des éléments DOM à partir du tableau trié
+            statsArray.forEach(statData => {
+                const statItem = document.createElement("div");
+                statItem.classList.add("flat-stat-item");
+                statItem.innerHTML = `<span>${statData.label}</span> <strong>${formaterNombre(statData.rawValue)}</strong>`;
+                
+                flatGrid.appendChild(statItem);
+                items.push({ element: statItem, text: statData.text });
+            });
 
             // Événement de recherche dans la catégorie
             searchInput.addEventListener("input", () => {
