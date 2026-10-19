@@ -1,7 +1,6 @@
-import { getData, minecraft_stats_categories, minecraftStatsUnits, convertStatValue, formaterNombre, formaterPseudo } from './api.js';
+import { getData, minecraft_custom_categories, minecraftStatsUnits, convertStatValue, formaterNombre, formaterLabel, formaterPseudo, statsCategories, fullCategories } from './api.js';
 
 async function loadPlayerProfile() {
-    // 1. Récupérer le paramètre "name" présent dans l'URL (ex: player.html?name=MonSuperPseudo)
     const urlParams = new URLSearchParams(window.location.search);
     const playerName = urlParams.get("name");
     const playerUuid = urlParams.get("uuid");
@@ -24,32 +23,34 @@ async function loadPlayerProfile() {
     document.getElementById("skin-bust").src = `https://minotar.net/armor/bust/${playerName}/150.png`;
     document.getElementById("skin").src = `https://minotar.net/skin/${playerName}`;
 
-    for (const [categoryName, statsList] of Object.entries(minecraft_stats_categories)) {
-        
-        // Création du conteneur de la catégorie
-        const categoryDiv = document.createElement("div");
-        categoryDiv.classList.add("stats_div");
+    // ==========================================
+    // 1. CATÉGORIE CUSTOM (Garde la vue ouverte)
+    // ==========================================
+    const customSection = createCategorySection(statsCategories.custom, false);
+    const customGrid = document.createElement("div");
+    customGrid.classList.add("category-grid");
+    customSection.contentDiv.appendChild(customGrid);
+    statsDiv.appendChild(customSection.sectionDiv);
 
-        // Création du titre de la catégorie
-        const categoryTitle = document.createElement("h2");
-        categoryTitle.textContent = categoryName;
-        categoryDiv.appendChild(categoryTitle);
+    for (const [categoryName, statsList] of Object.entries(minecraft_custom_categories)) {
+        const statsCardDiv = document.createElement("div");
+        statsCardDiv.classList.add("stats_div");
 
-        // Récupération des données API en parallèle
+        const statsCardTitle = document.createElement("h2");
+        statsCardTitle.textContent = categoryName;
+        statsCardDiv.appendChild(statsCardTitle);
+
         const promises = Object.entries(statsList).map(async ([key, label]) => {
             const apiResponse = await getData(`players/${playerUuid}/custom/${key}`);
             const rawValue = apiResponse ? apiResponse.value : 0;
 
-            // Si la valeur est nulle / 0, on retourne null pour signifier qu'elle ne doit pas être affichée
-            if (!rawValue || rawValue === 0) {
-                return null;
-            }
+            if (!rawValue || rawValue === 0) return null;
 
             let unit = ' ' + (minecraftStatsUnits[key] || '');
             const value = convertStatValue(key, rawValue);
 
-            if (unit.endsWith('s') && value<=1) {
-                unit=unit.slice(0, -1)
+            if (unit.endsWith('s') && value <= 1) {
+                unit = unit.slice(0, -1);
             }
             
             const stat = document.createElement("p");
@@ -57,18 +58,115 @@ async function loadPlayerProfile() {
             return stat;
         });
 
-        // Attente de toutes les promesses de la catégorie
         const statElements = await Promise.all(promises);
-
-        // On filtre pour ne garder que les éléments non nuls
         const validStatElements = statElements.filter(el => el !== null);
 
-        // Si la catégorie contient au moins une stat non nulle, on l'ajoute au DOM
         if (validStatElements.length > 0) {
-            validStatElements.forEach(statEl => categoryDiv.appendChild(statEl));
-            statsDiv.appendChild(categoryDiv);
+            validStatElements.forEach(statEl => statsCardDiv.appendChild(statEl));
+            customGrid.appendChild(statsCardDiv);
         }
     }
+
+    // ==========================================
+    // 2. AUTRES CATÉGORIES (Réduites par défaut)
+    // ==========================================
+    for (const [category, title] of Object.entries(statsCategories)) {
+        if (category !== "custom") {
+            const catSection = createCategorySection(title, true); // `true` pour réduire par défaut
+
+            // Barre de recherche interne
+            const searchInput = document.createElement("input");
+            searchInput.type = "text";
+            searchInput.placeholder = `Rechercher dans ${title.toLowerCase()}...`;
+            searchInput.classList.add("category-search");
+            catSection.contentDiv.appendChild(searchInput);
+
+            const flatGrid = document.createElement("div");
+            flatGrid.classList.add("flat-stats-grid");
+
+            let hasValidStats = false;
+            const items = [];
+
+            // 1. On récupère les entrées et on les trie par ordre décroissant de la valeur
+            const categoryData = fullCategories[category] || {};
+            const sortedEntries = Object.entries(categoryData).sort((a, b) => {
+                // a[0] et b[0] sont les clés/valeurs selon votre structure, on convertit en nombre pour un tri numérique correct
+                return Number(b[0]) - Number(a[0]); 
+            });
+
+            // 2. On boucle sur le tableau trié
+            for (const [value, label] of sortedEntries) {
+                if (value !== "0") {
+                    hasValidStats = true;
+                    const formattedLabel = formaterLabel(label);
+
+                    const statItem = document.createElement("div");
+                    statItem.classList.add("flat-stat-item");
+                    statItem.innerHTML = `<span>${formattedLabel}</span> <strong>${formaterNombre(value)}</strong>`;
+                    
+                    flatGrid.appendChild(statItem);
+                    items.push({ element: statItem, text: formattedLabel.toLowerCase() });
+                }
+            }
+
+            // Événement de recherche dans la catégorie
+            searchInput.addEventListener("input", () => {
+                const query = searchInput.value.toLowerCase().trim();
+                items.forEach(item => {
+                    if (item.text.includes(query)) {
+                        item.element.classList.remove("hidden");
+                    } else {
+                        item.element.classList.add("hidden");
+                    }
+                });
+            });
+
+            if (hasValidStats) {
+                catSection.contentDiv.appendChild(flatGrid);
+                statsDiv.appendChild(catSection.sectionDiv);
+            }
+        }
+    }
+}
+
+/**
+ * Fonction utilitaire pour générer une section avec accordéon
+ */
+function createCategorySection(titleText, startCollapsed = false) {
+    const sectionDiv = document.createElement("div");
+    sectionDiv.classList.add("category-section");
+    if (startCollapsed) {
+        sectionDiv.classList.add("collapsed");
+    }
+
+    // En-tête
+    const headerDiv = document.createElement("div");
+    headerDiv.classList.add("category-header");
+
+    const titleEl = document.createElement("h2");
+    titleEl.textContent = titleText;
+
+    const toggleBtn = document.createElement("button");
+    toggleBtn.classList.add("toggle-btn");
+    toggleBtn.innerHTML = `<span class="toggle-text">${startCollapsed ? "Développer" : "Réduire"}</span> <span class="toggle-icon">▼</span>`;
+
+    headerDiv.appendChild(titleEl);
+    headerDiv.appendChild(toggleBtn);
+
+    // Contenu
+    const contentDiv = document.createElement("div");
+    contentDiv.classList.add("category-content");
+
+    // Événement d'accordéon (clic sur l'en-tête)
+    headerDiv.addEventListener("click", () => {
+        const isCollapsed = sectionDiv.classList.toggle("collapsed");
+        toggleBtn.querySelector(".toggle-text").textContent = isCollapsed ? "Développer" : "Réduire";
+    });
+
+    sectionDiv.appendChild(headerDiv);
+    sectionDiv.appendChild(contentDiv);
+
+    return { sectionDiv, contentDiv };
 }
 
 loadPlayerProfile();

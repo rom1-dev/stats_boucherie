@@ -95,16 +95,50 @@ li a:hover {
     color: #04d361;
 }
 
+
+
 /* ==========================================================================
-   SECTION STATISTIQUES JOUEUR (#player-stats, .stats_div)
+   SECTIONS DE CATÉGORIES DE STATISTIQUES (.category-section)
    ========================================================================== */
+
+/* Conteneur global de toutes les sections de stats */
 #player-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    padding: 20px 0;
+}
+
+/* Chaque catégorie de stats (ex: Custom, Mined, Killed, etc.) */
+.category-section {
+    background: rgba(32, 32, 36, 0.4);
+    border: 1px solid #29292e;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Titre principal de la catégorie (ex: Statistiques personnalisées) */
+.category-section > h2 {
+    color: #ffffff;
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #04d361; /* Une touche de vert pour souligner la catégorie */
+    display: inline-block;
+}
+
+/* Grille qui contient les .stats_div à l'intérieur de la catégorie */
+.category-grid {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
     justify-content: center;
-    padding: 20px 0;
 }
+
+/* ==========================================================================
+   SECTION STATISTIQUES JOUEUR (.stats_div)
+   ========================================================================== */
 
 .stats_div {
     background: #202024;
@@ -144,13 +178,132 @@ li a:hover {
     color: #a8a8b3;
 }
 
-.stats_div p span {
+/* ==========================================================================
+   STYLE POUR LES STATS PLATES (catégories hors "custom")
+   ========================================================================== */
+
+/* Grille spécifique pour les catégories directes */
+.flat-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+}
+
+/* Style de chaque élément de stat individuel lorsqu'il est sous forme de mini-carte */
+.flat-stat-item {
+    background: #202024;
+    border: 1px solid #29292e;
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; /* Aligne la valeur en haut */
+    gap: 12px;               /* Force un espace minimum entre le nom et le chiffre */
+    font-size: 0.9rem;
+    color: #a8a8b3;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.flat-stat-item span {
+    line-height: 1.3;
+    word-break: break-word; /* Permet un découpage propre si un mot est extrêmement long */
+}
+
+.flat-stat-item strong {
     color: #ffffff;
     font-weight: 600;
-    background-color: #121214;
-    padding: 2px 8px;
-    border-radius: 4px;
+    flex-shrink: 0;  /* Empêche le chiffre de se comprimer ou de se déplacer */
+    white-space: nowrap; /* Garde toujours la valeur sur une seule ligne */
+}
+
+.flat-stat-item:hover {
+    transform: translateY(-2px);
+    border-color: #04d361;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.flat-stat-item strong {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   INTERACTION CATEGORIE : EN-TÊTE ACCORDÉON & BARRE DE RECHERCHE
+   ========================================================================== */
+
+/* En-tête de catégorie cliquable */
+.category-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+}
+
+.category-header h2 {
+    color: #ffffff;
+    font-size: 1.4rem;
+    margin-bottom: 0;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #04d361;
+}
+
+/* Bouton / Flèche de réduction */
+.toggle-btn {
+    background: #202024;
     border: 1px solid #29292e;
+    color: #e1e1e6;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.category-header:hover .toggle-btn {
+    border-color: #04d361;
+    color: #04d361;
+}
+
+.toggle-icon {
+    display: inline-block;
+    transition: transform 0.3s ease;
+}
+
+/* Rotation de la flèche quand réduit */
+.category-section.collapsed .toggle-icon {
+    transform: rotate(-90deg);
+}
+
+/* Contenu réductible */
+.category-content {
+    margin-top: 20px;
+    transition: all 0.3s ease;
+}
+
+.category-section.collapsed .category-content {
+    display: none;
+}
+
+/* Barre de recherche interne à une catégorie */
+.category-search {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    color: #e1e1e6;
+    background-color: #121214;
+    border: 1px solid #29292e;
+    border-radius: 8px;
+    outline: none;
+    margin-bottom: 16px;
+    transition: border-color 0.2s ease;
+}
+
+.category-search:focus {
+    border-color: #04d361;
 }
 
 /* ==========================================================================
