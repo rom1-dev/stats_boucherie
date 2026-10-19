@@ -3,7 +3,7 @@ import { getData } from './api.js';
 async function main() {
     const listElement = document.getElementById("player-list");
     
-    const res = await getData("players");
+    const res = await getData("players?ignoreBots=true&ignoreUnknown=true");
     
     if (!res || !res.players) {
         listElement.innerHTML = `<li class="error">Impossible de récupérer les données.</li>`;

@@ -355,8 +355,38 @@ li a:hover {
 }
 
 /* ==========================================================================
-   BOUTON DE RETOUR (.back-btn)
+   BOUTONS DE NAVIGATION (.nav-btn, .back-btn)
    ========================================================================== */
+.nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #04d361;
+    background-color: #202024;
+    border: 1px solid #04d361;
+    border-radius: 8px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.nav-btn:hover {
+    color: #ffffff;
+    background-color: #04d361;
+    box-shadow: 0 4px 12px rgba(4, 211, 97, 0.3);
+    transform: translateY(-2px);
+}
+
+.nav-header-btns {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
 .back-btn {
     display: inline-flex;
     align-items: center;

@@ -4,37 +4,55 @@ async function loadHallOfFame() {
     const container = document.getElementById("hall-of-fame-container");
     container.innerHTML = "<p style='text-align: center;'>Chargement du Hall of Fame...</p>";
 
-    // Structure pour regrouper les requêtes de stats à afficher dans le Hall of Fame
-    // Vous pouvez ajouter ou modifier les clés selon vos besoins
-    const statsToDisplay = [];
-
-    for (const [cat, name] of Object.entries(statsCategories)) {
-        if (cat!=="custom") {
-            statsToDisplay.push({category: cat, title: name})
-        }
-    }
-
-    for (const [cat, content] of Object.entries(minecraft_custom_categories)) {
-        for (const [label, value] of Object.entries(content)) {
-            statsToDisplay.push({category: "custom", key: label, title: value});
-        }
-    }
+    // Récupération globale sans limite pour pouvoir calculer le total de tous les joueurs
+    const hof_data = await getData("hall-of-fame?order=desc&ignoreBots=true&ignoreUnknown=true");
+    console.log(hof_data);
 
     container.innerHTML = "";
 
-    for (const statInfo of statsToDisplay) {
-        // Appel de l'API avec la limite de 3 et par ordre décroissant
-        let data;
-        if (statInfo.key) {
-            data = await getData(`stats/${statInfo.category}/${statInfo.key}?limit=3&order=desc`);
-        }
-        else {
-            data = await getData(`stats/${statInfo.category}?limit=3&order=desc`);
-        }
-        
+    if (!hof_data || !hof_data.rankings || hof_data.rankings.length === 0) {
+        container.innerHTML = "<p class='error' style='text-align: center;'>Aucune donnée disponible pour le Hall of Fame.</p>";
+        return;
+    }
 
-        if (!data || !data.players || data.players.length === 0) {
-            continue; // Ignore si aucune donnée n'est disponible pour cette stat
+    // Itération sur chaque classement retourné par l'API
+    for (const statRanking of hof_data.rankings) {
+        if (!statRanking.players || statRanking.players.length === 0) {
+            continue; // Ignore si aucun joueur n'est disponible
+        }
+
+        // Détermination du titre de la statistique
+        let statTitle = statRanking.stat || statRanking.path || statRanking.category;
+        const baseCategory = statRanking.category ? statRanking.category.replace("minecraft:", "") : "";
+
+        if (baseCategory !== "custom" && statsCategories[baseCategory]) {
+            statTitle = statsCategories[baseCategory];
+        } else if (baseCategory === "custom") {
+            const statKey = statRanking.stat ? statRanking.stat.replace("minecraft:", "") : (statRanking.path ? statRanking.path.replace("custom/", "") : "");
+            
+            let found = false;
+            for (const subcategoryObj of Object.values(minecraft_custom_categories)) {
+                if (subcategoryObj[statKey]) {
+                    statTitle = subcategoryObj[statKey];
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                statTitle = formaterLabel(statKey);
+            }
+        }
+
+        // Clé utile pour l'unité / conversion
+        const statKeyForUnit = statRanking.stat ? statRanking.stat.replace("minecraft:", "") : (statRanking.path ? statRanking.path.replace("custom/", "") : baseCategory);
+
+        // 1. Calcul du total global de tous les joueurs pour cette statistique
+        const grandTotalRaw = statRanking.players.reduce((sum, player) => sum + (player.value || 0), 0);
+        let totalUnit = ' ' + (minecraftStatsUnits[statKeyForUnit] || '');
+        let convertedTotal = convertStatValue(statKeyForUnit, grandTotalRaw);
+
+        if (totalUnit.endsWith('s') && convertedTotal <= 1) {
+            totalUnit = totalUnit.slice(0, -1);
         }
 
         // Création de la carte pour cette statistique
@@ -42,25 +60,34 @@ async function loadHallOfFame() {
         cardDiv.classList.add("stats_div");
 
         const titleEl = document.createElement("h2");
-        titleEl.textContent = statInfo.title;
+        titleEl.textContent = statTitle;
         cardDiv.appendChild(titleEl);
 
-        // Liste des joueurs du top 3
-        data.players.forEach(player => {
+        // Affichage du total global aligné grâce à la structure flex existante (.stats_div p)
+        const totalP = document.createElement("p");
+        totalP.style.fontStyle = "italic";
+        totalP.style.borderBottom = "1px solid #29292e"; // Optionnel : petite démarcation propre avec le podium
+        totalP.style.paddingBottom = "8px";
+        totalP.style.marginBottom = "8px";
+        totalP.innerHTML = `<span>🌍 Total du serveur :</span> <strong>${formaterNombre(convertedTotal)}${totalUnit}</strong>`;
+        cardDiv.appendChild(totalP);
+
+        // 2. Extraction uniquement du Top 3 pour l'affichage des podiums
+        const top3Players = statRanking.players.slice(0, 3);
+
+        top3Players.forEach(player => {
             const p = document.createElement("p");
-            const playerUuid = player.uuid
-            const playerName = player.name || "Joueur Inconnu..."
+            const playerUuid = player.uuid;
+            const playerName = player.name || "Joueur Inconnu...";
             
-            // Formatage de la valeur si nécessaire (ex: conversion de ticks en heures pour le temps de jeu)
             let rawValue = player.value;
-            let unit = ' ' + (minecraftStatsUnits[statInfo.key] || '');
-            let convertedValue = convertStatValue(statInfo.key, rawValue);
+            let unit = ' ' + (minecraftStatsUnits[statKeyForUnit] || '');
+            let convertedValue = convertStatValue(statKeyForUnit, rawValue);
 
             if (unit.endsWith('s') && convertedValue <= 1) {
                 unit = unit.slice(0, -1);
             }
 
-            // Attribuer des médailles ou des icônes selon le rang
             let medal = "";
             if (player.rank === 1) medal = "🥇";
             else if (player.rank === 2) medal = "🥈";
