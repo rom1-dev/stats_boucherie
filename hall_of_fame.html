@@ -8,10 +8,43 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <p><a href="index.html" class="back-btn">← Retour à la liste des joueurs</a></p>
+    <div class="nav-header-btns">
+        <p><a href="index.html" class="back-btn">← Retour à la liste des joueurs</a></p>
+    </div>
 
     <h1>Hall of Fame</h1>
+
+    <!-- Filtres On/Off -->
+    <div class="toggle-filters-container">
+        <label class="toggle-filter">
+            <input type="checkbox" id="toggle-unknown">
+            <span class="toggle-switch"></span>
+            <span class="toggle-label">Joueurs Inconnus</span>
+        </label>
+        <label class="toggle-filter">
+            <input type="checkbox" id="toggle-bots">
+            <span class="toggle-switch"></span>
+            <span class="toggle-label">Bots</span>
+        </label>
+    </div>
+
+    <input type="text" id="search-bar" placeholder="Rechercher une statistique...">
+
+    <!-- Section du Classement Global des Médailles (Réductible) -->
+    <div id="global-medals-ranking" class="category-section" style="margin-bottom: 30px;">
+        <div class="category-header" id="medals-ranking-header">
+            <h2 style="margin-right: 10px;">🏅 Classement Général des Médailles</h2>
+            <button class="toggle-btn" id="medals-toggle-btn">
+                <span class="toggle-text">Réduire</span>
+                <span class="toggle-icon">▼</span>
+            </button>
+        </div>
+        <div class="category-content" id="medals-ranking-content">
+            <div id="global-medals-list" style="display: flex; flex-direction: column; gap: 8px;">
+                <p style="text-align: center; color: #a8a8b3;">Chargement du classement...</p>
+            </div>
+        </div>
+    </div>
 
     <div id="hall-of-fame-container">
         <!-- Les podiums du Top 3 seront injectés ici dynamiquement -->

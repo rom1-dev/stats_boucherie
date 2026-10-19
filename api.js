@@ -93,7 +93,7 @@ export const minecraft_custom_categories = {
         "jump": "Sauts",
         "drop": "Objets lâchés",
         "trigger_trapped_chest": "Coffres piégés déclenchés",
-        "leave_game": "Parties quittées",
+        "leave_game": "Sessions de jeu",
         "total_world_time": "Temps total dans le monde"
     },
     "Déplacements": {

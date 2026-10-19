@@ -16,6 +16,20 @@
     
     <h1 id="player-title">Chargement...</h1>
 
+    <!-- Filtres On/Off globaux -->
+    <div class="toggle-filters-container">
+        <label class="toggle-filter">
+            <input type="checkbox" id="toggle-unknown">
+            <span class="toggle-switch"></span>
+            <span class="toggle-label">Joueurs Inconnus</span>
+        </label>
+        <label class="toggle-filter">
+            <input type="checkbox" id="toggle-bots">
+            <span class="toggle-switch"></span>
+            <span class="toggle-label">Bots</span>
+        </label>
+    </div>
+
     <div class="player-profile-header">
         <img id="skin-avatar" alt="Avatar du joueur" onerror="imageErreur(this)"/>
         <img id="skin-iso" alt="Tête du joueur" onerror="imageErreur(this)"/>
@@ -24,10 +38,23 @@
         <img id="skin" alt="skin du joueur" onerror="imageErreur(this)"/>
     </div>
 
+    <!-- Section Médailles du joueur -->
+    <div id="player-medals-container" class="category-section" style="margin: 0 auto 30px auto;">
+        <div class="category-header" style="cursor: default;">
+            <h2>🏅 Podiums & Médailles</h2>
+        </div>
+        <div class="category-content">
+            <div id="medals-content" style="display: flex; justify-content: center; gap: 30px; font-size: 1.1rem; color: #a8a8b3;">
+                <span>🥇 Or : <strong id="gold-count" style="color: #ffffff;">0</strong></span>
+                <span>🥈 Argent : <strong id="silver-count" style="color: #ffffff;">0</strong></span>
+                <span>🥉 Bronze : <strong id="bronze-count" style="color: #ffffff;">0</strong></span>
+            </div>
+        </div>
+    </div>
+
     <script>
         function imageErreur(img) {
             img.parentElement.classList.add("hidden");
-            // Éviter une boucle infinie si l'image de secours échoue aussi
             img.onerror = null; 
         }
     </script>

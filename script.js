@@ -1,9 +1,15 @@
 import { getData } from './api.js';
 
-async function main() {
+// Récupération de l'état global depuis le localStorage (par défaut 'false' donc ignorés, ou 'true' si activés)
+let ignoreUnknown = localStorage.getItem("ignoreUnknown") !== "false";
+let ignoreBots = localStorage.getItem("ignoreBots") !== "false";
+
+async function loadPlayers() {
     const listElement = document.getElementById("player-list");
+    listElement.innerHTML = "<li>Chargement des joueurs...</li>";
     
-    const res = await getData("players?ignoreBots=true&ignoreUnknown=true");
+    // Requête dynamique avec les filtres actuels
+    const res = await getData(`players?ignoreBots=${ignoreBots}&ignoreUnknown=${ignoreUnknown}`);
     
     if (!res || !res.players) {
         listElement.innerHTML = `<li class="error">Impossible de récupérer les données.</li>`;
@@ -12,14 +18,13 @@ async function main() {
 
     const players = res.players;
 
-    // === TRI DES JOUEURS PAR NOM (ALPHABÉTIQUE) ===
+    // TRI ALPHABÉTIQUE
     players.sort((a, b) => {
         const nameA = a.name || "zzzz";
         const nameB = b.name || "zzzz";
         return nameA.localeCompare(nameB, 'fr', { sensitivity: 'base' });
     });
 
-    // Affichage dans le HTML
     listElement.innerHTML = "";
     if (players.length === 0) {
         listElement.innerHTML = "<li>Aucun joueur trouvé.</li>";
@@ -32,13 +37,12 @@ async function main() {
         const playerName = player.name || "Joueur Inconnu...";
         a.href = `player.html?uuid=${player.uuid}&name=${playerName}`;
 
-        // Image de la tête Minotar avec gestion d'erreur de chargement
         const img = document.createElement("img");
         img.src = `https://minotar.net/helm/${playerName}/100.png`;
         img.alt = `Tête de ${playerName}`;
         img.classList.add("player-avatar-head");
         img.onerror = function() {
-            this.onerror = null; // Empêche une boucle infinie si l'image de Steve échoue aussi
+            this.onerror = null;
             this.src = "https://minotar.net/helm/MHF_Steve/100.png";
         };
 
@@ -53,23 +57,54 @@ async function main() {
         listElement.appendChild(li);
     });
 
+    applySearchFilter();
+}
+
+function applySearchFilter() {
     const searchInput = document.getElementById('search-bar');
+    if (!searchInput) return;
+
+    const filterValue = searchInput.value.toLowerCase().trim();
     const items = document.querySelectorAll('.item');
 
-    searchInput.addEventListener('input', function() {
-        const filterValue = searchInput.value.toLowerCase().trim();
-
-        items.forEach(function(item) {
-            const text = item.textContent.toLowerCase();
-
-            if (text.includes(filterValue)) {
-                item.classList.remove('hidden');
-            } else {
-                item.classList.add('hidden');
-            }
-        });
+    items.forEach(function(item) {
+        const text = item.textContent.toLowerCase();
+        if (text.includes(filterValue)) {
+            item.classList.remove('hidden');
+        } else {
+            item.classList.add('hidden');
+        }
     });
 }
 
-main();
+function setupEvents() {
+    const toggleUnknown = document.getElementById("toggle-unknown");
+    const toggleBots = document.getElementById("toggle-bots");
+    const searchInput = document.getElementById('search-bar');
 
+    // Synchroniser l'état visuel des checkboxes avec le stockage global
+    if (toggleUnknown) {
+        toggleUnknown.checked = !ignoreUnknown;
+        toggleUnknown.addEventListener("change", (e) => {
+            ignoreUnknown = !e.target.checked;
+            localStorage.setItem("ignoreUnknown", ignoreUnknown);
+            loadPlayers();
+        });
+    }
+
+    if (toggleBots) {
+        toggleBots.checked = !ignoreBots;
+        toggleBots.addEventListener("change", (e) => {
+            ignoreBots = !e.target.checked;
+            localStorage.setItem("ignoreBots", ignoreBots);
+            loadPlayers();
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', applySearchFilter);
+    }
+}
+
+setupEvents();
+loadPlayers();

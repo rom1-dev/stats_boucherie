@@ -11,7 +11,7 @@ body {
     background-color: #121214;
     color: #e1e1e6;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif;
-    max-width: 1200px; /* Augmenté pour bien accueillir les cartes flexbox */
+    max-width: 1200px;
     margin: 0 auto;
     padding: 40px 20px;
 }
@@ -146,8 +146,10 @@ li a:hover {
     border-radius: 12px;
     border: 1px solid #29292e;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    flex: 1 1 280px; /* S'adapte proprement sur les écrans mobiles */
-    white-space: nowrap; /* Garde toujours la valeur sur une seule ligne */
+    /* Ajuste la largeur à la taille minimale du contenu */
+    width: fit-content;
+    max-width: 100%; /* Évite de dépasser de l'écran sur mobile */
+    white-space: nowrap; /* Empêche le texte de se casser sur plusieurs lignes */
     transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -181,49 +183,45 @@ li a:hover {
    STYLE POUR LES STATS PLATES (catégories hors "custom")
    ========================================================================== */
 
-/* Grille spécifique pour les catégories directes */
+/* Grille flexible en mode flexbox pour s'aligner côte à côte et revenir à la ligne */
 .flat-stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center; /* Centre les mini-cartes dans la section */
 }
 
-/* Style de chaque élément de stat individuel lorsqu'il est sous forme de mini-carte */
+/* Style de chaque élément de stat individuel */
 .flat-stat-item {
     background: #202024;
     border: 1px solid #29292e;
     border-radius: 8px;
-    padding: 12px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start; /* Aligne la valeur en haut */
-    gap: 12px;               /* Force un espace minimum entre le nom et le chiffre */
+    padding: 10px 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
     font-size: 0.9rem;
     color: #a8a8b3;
+    width: fit-content; /* S'ajuste strictement à la taille du contenu texte/icône */
+    white-space: nowrap; /* Garde la ligne sur une seule ligne */
     transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .flat-stat-item span {
     line-height: 1.3;
-    word-break: break-word; /* Permet un découpage propre si un mot est extrêmement long */
 }
 
 .flat-stat-item strong {
     color: #ffffff;
     font-weight: 600;
-    flex-shrink: 0;  /* Empêche le chiffre de se comprimer ou de se déplacer */
-    white-space: nowrap; /* Garde toujours la valeur sur une seule ligne */
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .flat-stat-item:hover {
     transform: translateY(-2px);
     border-color: #04d361;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.flat-stat-item strong {
-    color: #ffffff;
-    font-weight: 600;
 }
 
 /* ==========================================================================
@@ -387,6 +385,84 @@ ul li a {
 
 .hof-player-link:hover {
     text-decoration: underline;
+}
+
+/* Style pour les icônes d'items / blocs dans les stats */
+.stat-icon {
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
+    margin-right: 8px;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    flex-shrink: 0;
+}
+
+/* ==========================================================================
+   BOUTONS BASCULES (TOGGLE SWITCHES) POUR LES FILTRES
+   ========================================================================== */
+.toggle-filters-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.toggle-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #202024;
+    border: 1px solid #29292e;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.2s ease;
+}
+
+.toggle-filter:hover {
+    border-color: #04d361;
+}
+
+.toggle-filter input[type="checkbox"] {
+    display: none;
+}
+
+.toggle-switch {
+    width: 38px;
+    height: 20px;
+    background-color: #323238;
+    border-radius: 20px;
+    position: relative;
+    transition: background-color 0.3s ease;
+}
+
+.toggle-switch::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: #e1e1e6;
+    transition: transform 0.3s ease;
+}
+
+.toggle-filter input[type="checkbox"]:checked + .toggle-switch {
+    background-color: #04d361;
+}
+
+.toggle-filter input[type="checkbox"]:checked + .toggle-switch::before {
+    transform: translateX(18px);
+}
+
+.toggle-label {
+    font-size: 0.9rem;
+    color: #c4c4cc;
+    font-weight: 500;
 }
 
 /* ==========================================================================

@@ -1,5 +1,8 @@
 import { getData, minecraft_custom_categories, minecraftStatsUnits, convertStatValue, formaterNombre, formaterLabel, formaterPseudo, statsCategories } from './api.js';
 
+let ignoreUnknown = localStorage.getItem("ignoreUnknown") !== "false";
+let ignoreBots = localStorage.getItem("ignoreBots") !== "false";
+
 async function loadPlayerProfile() {
     const urlParams = new URLSearchParams(window.location.search);
     const playerName = urlParams.get("name");
@@ -11,6 +14,7 @@ async function loadPlayerProfile() {
     if (!playerName && !playerUuid) {
         titleElement.textContent = "Aucun joueur spécifié.";
         document.querySelector(".player-profile-header").classList.add("hidden");
+        document.getElementById("player-medals-container").classList.add("hidden");
         return;
     }
 
@@ -23,14 +27,33 @@ async function loadPlayerProfile() {
     document.getElementById("skin-bust").src = `https://minotar.net/armor/bust/${playerName}/150.png`;
     document.getElementById("skin").src = `https://minotar.net/skin/${playerName}`;
 
+    // Calcul et affichage des médailles en fonction des filtres actuels
+    await calculateAndDisplayMedals(playerUuid);
+
+    // Vider les anciennes stats si on recharge suite à un changement de filtre
+    statsDiv.innerHTML = "";
+
     // ==========================================
-    // 1. CATÉGORIE CUSTOM (Garde la vue ouverte)
+    // 1. CATÉGORIE CUSTOM (1 seul appel API & tri)
     // ==========================================
     const customSection = createCategorySection(statsCategories.custom, false);
+    
+    const customSearchInput = document.createElement("input");
+    customSearchInput.type = "text";
+    customSearchInput.placeholder = `Rechercher dans ${statsCategories.custom.toLowerCase()}...`;
+    customSearchInput.classList.add("category-search");
+    customSection.contentDiv.appendChild(customSearchInput);
+
     const customGrid = document.createElement("div");
     customGrid.classList.add("category-grid");
     customSection.contentDiv.appendChild(customGrid);
     statsDiv.appendChild(customSection.sectionDiv);
+
+    const customData = await getData(`players/${playerUuid}/custom`);
+    const customStats = customData && customData.stats ? customData.stats : {};
+
+    let hasValidCustomStats = false;
+    const customSearchItems = [];
 
     for (const [categoryName, statsList] of Object.entries(minecraft_custom_categories)) {
         const statsCardDiv = document.createElement("div");
@@ -40,31 +63,106 @@ async function loadPlayerProfile() {
         statsCardTitle.textContent = categoryName;
         statsCardDiv.appendChild(statsCardTitle);
 
-        const promises = Object.entries(statsList).map(async ([key, label]) => {
-            const apiResponse = await getData(`players/${playerUuid}/custom/${key}`);
-            const rawValue = apiResponse ? apiResponse.value : 0;
+        const statsArray = [];
 
-            if (!rawValue || rawValue === 0) return null;
+        for (const [key, label] of Object.entries(statsList)) {
+            const rawKeyFull = key.startsWith("minecraft:") ? key : `minecraft:${key}`;
+            const rawKeyShort = key.replace("minecraft:", "");
+            
+            const rawValue = customStats[rawKeyFull] !== undefined ? customStats[rawKeyFull] : (customStats[rawKeyShort] !== undefined ? customStats[rawKeyShort] : 0);
 
-            let unit = ' ' + (minecraftStatsUnits[key] || '');
-            const value = convertStatValue(key, rawValue);
+            if (!rawValue || rawValue === 0) continue;
+
+            let unit = ' ' + (minecraftStatsUnits[rawKeyShort] || '');
+            const value = convertStatValue(rawKeyShort, rawValue);
 
             if (unit.endsWith('s') && value <= 1) {
                 unit = unit.slice(0, -1);
             }
-            
-            const stat = document.createElement("p");
-            stat.innerHTML = `<strong>${label} : </strong> ${formaterNombre(value)}${unit}`;
-            return stat;
-        });
 
-        const statElements = await Promise.all(promises);
-        const validStatElements = statElements.filter(el => el !== null);
+            statsArray.push({
+                label: label,
+                rawKey: rawKeyShort,
+                formattedValue: `${formaterNombre(value)}${unit}`,
+                rawValue: Number(rawValue),
+                searchText: label.toLowerCase()
+            });
+        }
 
-        if (validStatElements.length > 0) {
-            validStatElements.forEach(statEl => statsCardDiv.appendChild(statEl));
+        statsArray.sort((a, b) => b.rawValue - a.rawValue);
+
+        if (statsArray.length > 0) {
+            hasValidCustomStats = true;
+            statsArray.forEach(statData => {
+                const statP = document.createElement("p");
+                statP.style.display = "flex";
+                statP.style.alignItems = "center";
+                statP.style.justifyContent = "space-between";
+
+                const cleanKey = statData.rawKey.replace("custom/", "");
+                const iconUrl = `https://api.minecraftitems.xyz/api/item/${cleanKey}`;
+
+                const img = document.createElement("img");
+                img.src = iconUrl;
+                img.alt = "";
+                img.className = "stat-icon";
+                img.onerror = function() {
+                    this.style.display = "none";
+                };
+
+                const leftContainer = document.createElement("span");
+                leftContainer.style.display = "flex";
+                leftContainer.style.alignItems = "center";
+                leftContainer.appendChild(img);
+
+                const labelSpan = document.createElement("span");
+                labelSpan.textContent = statData.label;
+                leftContainer.appendChild(labelSpan);
+
+                const strongVal = document.createElement("strong");
+                strongVal.textContent = statData.formattedValue;
+
+                statP.appendChild(leftContainer);
+                statP.appendChild(strongVal);
+                statsCardDiv.appendChild(statP);
+
+                customSearchItems.push({
+                    element: statP,
+                    text: statData.searchText
+                });
+            });
+
             customGrid.appendChild(statsCardDiv);
         }
+    }
+
+    customSearchInput.addEventListener("input", () => {
+        const query = customSearchInput.value.toLowerCase().trim();
+
+        customGrid.querySelectorAll(".stats_div").forEach(cardDiv => {
+            let hasVisibleStatInCard = false;
+            const statParagraphs = cardDiv.querySelectorAll("p");
+
+            statParagraphs.forEach(statP => {
+                const text = statP.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    statP.classList.remove("hidden");
+                    hasVisibleStatInCard = true;
+                } else {
+                    statP.classList.add("hidden");
+                }
+            });
+
+            if (hasVisibleStatInCard) {
+                cardDiv.classList.remove("hidden");
+            } else {
+                cardDiv.classList.add("hidden");
+            }
+        });
+    });
+
+    if (!hasValidCustomStats) {
+        customSection.sectionDiv.classList.add("hidden");
     }
 
     // ==========================================
@@ -72,9 +170,8 @@ async function loadPlayerProfile() {
     // ==========================================
     for (const [category, title] of Object.entries(statsCategories)) {
         if (category !== "custom") {
-            const catSection = createCategorySection(title, true); // `true` pour réduire par défaut
+            const catSection = createCategorySection(title, true);
 
-            // Barre de recherche interne
             const searchInput = document.createElement("input");
             searchInput.type = "text";
             searchInput.placeholder = `Rechercher dans ${title.toLowerCase()}...`;
@@ -86,12 +183,11 @@ async function loadPlayerProfile() {
 
             let hasValidStats = false;
             const items = [];
-            const statsArray = []; // Tableau temporaire pour stocker et trier les stats
+            const statsArray = [];
 
             const data = await getData(`players/${playerUuid}/${category}`);
             const { stats } = data;
 
-            // 1. Récupération des données dans un tableau
             for (const [x, value] of Object.entries(stats || {})) {
                 const label = x.replace("minecraft:", "");
                 if (value !== "test") {
@@ -99,27 +195,49 @@ async function loadPlayerProfile() {
                     const formattedLabel = formaterLabel(label);
 
                     statsArray.push({
+                        rawKey: label,
                         label: formattedLabel,
-                        rawValue: Number(value), // Conversion en nombre pour un tri correct
+                        rawValue: Number(value),
                         text: formattedLabel.toLowerCase()
                     });
                 }
             }
 
-            // 2. Tri du tableau par ordre décroissant de la valeur
             statsArray.sort((a, b) => b.rawValue - a.rawValue);
 
-            // 3. Création des éléments DOM à partir du tableau trié
             statsArray.forEach(statData => {
                 const statItem = document.createElement("div");
                 statItem.classList.add("flat-stat-item");
-                statItem.innerHTML = `<span>${statData.label}</span> <strong>${formaterNombre(statData.rawValue)}</strong>`;
+
+                const iconUrl = `https://api.minecraftitems.xyz/api/item/${statData.rawKey}`;
+
+                const img = document.createElement("img");
+                img.src = iconUrl;
+                img.alt = "";
+                img.className = "stat-icon";
+                img.onerror = function() {
+                    this.style.display = "none";
+                };
+
+                const span = document.createElement("span");
+                span.style.display = "flex";
+                span.style.alignItems = "center";
+                span.appendChild(img);
+                
+                const textSpan = document.createElement("span");
+                textSpan.textContent = statData.label;
+                span.appendChild(textSpan);
+
+                statItem.appendChild(span);
+                
+                const strong = document.createElement("strong");
+                strong.textContent = formaterNombre(statData.rawValue);
+                statItem.appendChild(strong);
                 
                 flatGrid.appendChild(statItem);
                 items.push({ element: statItem, text: statData.text });
             });
 
-            // Événement de recherche dans la catégorie
             searchInput.addEventListener("input", () => {
                 const query = searchInput.value.toLowerCase().trim();
                 items.forEach(item => {
@@ -140,8 +258,51 @@ async function loadPlayerProfile() {
 }
 
 /**
- * Fonction utilitaire pour générer une section avec accordéon
+ * Fonction pour calculer et afficher le nombre de médailles du joueur via le Hall of Fame
  */
+async function calculateAndDisplayMedals(playerUuid) {
+    const goldEl = document.getElementById("gold-count");
+    const silverEl = document.getElementById("silver-count");
+    const bronzeEl = document.getElementById("bronze-count");
+
+    if (!goldEl || !silverEl || !bronzeEl) return;
+
+    goldEl.textContent = "...";
+    silverEl.textContent = "...";
+    bronzeEl.textContent = "...";
+
+    // Récupération du Hall of Fame avec les filtres globaux actuels
+    const hof_data = await getData(`hall-of-fame?order=desc&ignoreBots=${ignoreBots}&ignoreUnknown=${ignoreUnknown}`);
+
+    if (!hof_data || !hof_data.rankings) {
+        goldEl.textContent = "0";
+        silverEl.textContent = "0";
+        bronzeEl.textContent = "0";
+        return;
+    }
+
+    let gold = 0;
+    let silver = 0;
+    let bronze = 0;
+
+    for (const statRanking of hof_data.rankings) {
+        if (!statRanking.players || statRanking.players.length === 0) continue;
+
+        // On regarde les joueurs du top (rang 1, 2, 3)
+        statRanking.players.forEach(player => {
+            if (player.uuid === playerUuid && (player.value || 0) > 0) {
+                if (player.rank === 1) gold++;
+                else if (player.rank === 2) silver++;
+                else if (player.rank === 3) bronze++;
+            }
+        });
+    }
+
+    goldEl.textContent = gold;
+    silverEl.textContent = silver;
+    bronzeEl.textContent = bronze;
+}
+
 function createCategorySection(titleText, startCollapsed = false) {
     const sectionDiv = document.createElement("div");
     sectionDiv.classList.add("category-section");
@@ -149,7 +310,6 @@ function createCategorySection(titleText, startCollapsed = false) {
         sectionDiv.classList.add("collapsed");
     }
 
-    // En-tête
     const headerDiv = document.createElement("div");
     headerDiv.classList.add("category-header");
 
@@ -163,11 +323,9 @@ function createCategorySection(titleText, startCollapsed = false) {
     headerDiv.appendChild(titleEl);
     headerDiv.appendChild(toggleBtn);
 
-    // Contenu
     const contentDiv = document.createElement("div");
     contentDiv.classList.add("category-content");
 
-    // Événement d'accordéon (clic sur l'en-tête)
     headerDiv.addEventListener("click", () => {
         const isCollapsed = sectionDiv.classList.toggle("collapsed");
         toggleBtn.querySelector(".toggle-text").textContent = isCollapsed ? "Développer" : "Réduire";
@@ -179,4 +337,28 @@ function createCategorySection(titleText, startCollapsed = false) {
     return { sectionDiv, contentDiv };
 }
 
+function setupEvents() {
+    const toggleUnknown = document.getElementById("toggle-unknown");
+    const toggleBots = document.getElementById("toggle-bots");
+
+    if (toggleUnknown) {
+        toggleUnknown.checked = !ignoreUnknown;
+        toggleUnknown.addEventListener("change", (e) => {
+            ignoreUnknown = !e.target.checked;
+            localStorage.setItem("ignoreUnknown", ignoreUnknown);
+            loadPlayerProfile(); // Recharge les stats et recalcule les médailles dynamiquement
+        });
+    }
+
+    if (toggleBots) {
+        toggleBots.checked = !ignoreBots;
+        toggleBots.addEventListener("change", (e) => {
+            ignoreBots = !e.target.checked;
+            localStorage.setItem("ignoreBots", ignoreBots);
+            loadPlayerProfile(); // Recharge les stats et recalcule les médailles dynamiquement
+        });
+    }
+}
+
+setupEvents();
 loadPlayerProfile();
