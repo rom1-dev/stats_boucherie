@@ -146,9 +146,8 @@ li a:hover {
     border-radius: 12px;
     border: 1px solid #29292e;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    width: 300px; /* Légèrement élargi pour une meilleure lisibilité */
     flex: 1 1 280px; /* S'adapte proprement sur les écrans mobiles */
-    max-width: 360px;
+    white-space: nowrap; /* Garde toujours la valeur sur une seule ligne */
     transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -346,6 +345,13 @@ li a:hover {
 #skin {
     width: 150px; /* Ajustez selon la taille souhaitée pour le skin à plat */
     height: auto;
+}
+
+#hall-of-fame-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
 }
 
 /* ==========================================================================

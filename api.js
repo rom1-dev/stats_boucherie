@@ -265,7 +265,7 @@ export const statsCategories = {
     "crafted": "Objets fabriqués",
     "broken": "Objets cassés",
     "custom": "Statistiques générales",
-    "killed_by": "Morts par",
+    "killed_by": "Tué par",
     "killed": "Créatures tuées",
     "dropped": "Objets lâchés",
     "mined": "Blocs minés"
