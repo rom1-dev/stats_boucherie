@@ -46,7 +46,7 @@
         </div>
 
         <!-- Section des statistiques et podiums globaux -->
-        <div id="global-records-section" style="display: flex; flex-direction: column; gap: 30px;">
+        <div id="global-records-section" style="display: flex; flex-direction: column; gap: 30px; margin-bottom: 20px;">
             
             <!-- Statistiques Custom Clés du Serveur (Réductible) -->
             <div id="custom-stats-section" class="category-section">
@@ -90,6 +90,46 @@
                 </div>
             </div>
 
+        </div>
+
+        <!-- Section Comparateur de Joueurs -->
+        <div class="category-section" id="comparator-section" style="margin-bottom: 30px;">
+            <div class="category-header" id="comparator-header">
+                <h2 style="margin-bottom: 0;">⚔️ Comparateur de Joueurs</h2>
+                <button class="toggle-btn" id="comparator-toggle-btn">
+                    <span class="toggle-text">Réduire</span>
+                    <span class="toggle-icon">▼</span>
+                </button>
+            </div>
+            <div class="category-content">
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; align-items: center;">
+                    
+                    <!-- Joueur 1 avec suggestions -->
+                    <div style="flex: 1; min-width: 200px;">
+                        <input type="text" id="compare-player-1" list="players-suggestions" placeholder="Entrer le pseudo du joueur 1..." class="category-search" style="margin-bottom: 0;">
+                    </div>
+
+                    <!-- Joueur 2 avec suggestions -->
+                    <div style="flex: 1; min-width: 200px;">
+                        <input type="text" id="compare-player-2" list="players-suggestions" placeholder="Entrer le pseudo du joueur 2..." class="category-search" style="margin-bottom: 0;">
+                    </div>
+
+                    <button id="launch-compare-btn" class="nav-btn" style="padding: 10px 24px;">Comparer</button>
+                </div>
+
+                <!-- Datalist partagée pour les suggestions dynamiques -->
+                <datalist id="players-suggestions"></datalist>
+
+                <!-- Résultat de la comparaison -->
+                <div id="comparator-results" style="display: none;">
+                    <div id="comparator-summary" style="background: #121214; padding: 15px; border-radius: 8px; border: 1px solid #29292e; margin-bottom: 20px; text-align: center; font-size: 1.1rem;">
+                        <!-- Le récapitulatif du vainqueur s'affichera ici -->
+                    </div>
+                    <div id="comparator-grid" class="category-grid">
+                        <!-- Les lignes de stats comparatives s'afficheront ici -->
+                    </div>
+                </div>
+            </div>
         </div>
 
         <script src="script.js" type="module"></script>
