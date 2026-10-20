@@ -125,6 +125,7 @@ export const minecraft_custom_categories = {
         "damage_absorbed": "Dégâts absorbés",
         "damage_resisted": "Dégâts résistés",
         "damage_dealt_absorbed": "Dégâts sur absorption",
+        "target_hit": "Cibles touchées",
         "raid_win": "Raids gagnés",
         "raid_trigger": "Raids déclenchés"
     },

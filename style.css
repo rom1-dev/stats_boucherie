@@ -336,7 +336,7 @@ li a:hover {
 /* Style spécifique pour chaque type d'affichage si besoin */
 
 #skin-body, #skin-bust, #skin-avatar, #skin-iso, #skin {
-    /* Mettent en valeur le rendu 3D de l'armure/corps */
+    /* Mettent en valeur les images du skin */
     filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
 }
 

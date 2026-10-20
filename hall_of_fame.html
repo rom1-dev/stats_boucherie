@@ -14,22 +14,6 @@
 
     <h1>Hall of Fame</h1>
 
-    <!-- Filtres On/Off -->
-    <div class="toggle-filters-container">
-        <label class="toggle-filter">
-            <input type="checkbox" id="toggle-unknown">
-            <span class="toggle-switch"></span>
-            <span class="toggle-label">Joueurs Inconnus</span>
-        </label>
-        <label class="toggle-filter">
-            <input type="checkbox" id="toggle-bots">
-            <span class="toggle-switch"></span>
-            <span class="toggle-label">Bots</span>
-        </label>
-    </div>
-
-    <input type="text" id="search-bar" placeholder="Rechercher une statistique...">
-
     <!-- Section du Classement Global des Médailles (Réductible) -->
     <div id="global-medals-ranking" class="category-section" style="margin-bottom: 30px;">
         <div class="category-header" id="medals-ranking-header">
@@ -46,8 +30,36 @@
         </div>
     </div>
 
+    <!-- Nombre dans le top -->
+    <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-bottom: 20px;">
+        <label for="hof-limit-input" style="font-size: 0.9rem; color: #a8a8b3;">Afficher le top :</label>
+        <input type="number" id="hof-limit-input" value="5" min="1" max="1000" class="category-search" style="margin-bottom: 0; width: 80px; padding: 6px 10px; text-align: center;">
+    </div>
+
+    <!-- Filtres On/Off -->
+    <div class="toggle-filters-container">
+        <label class="toggle-filter">
+            <input type="checkbox" id="toggle-unknown">
+            <span class="toggle-switch"></span>
+            <span class="toggle-label">Joueurs Inconnus</span>
+        </label>
+        <label class="toggle-filter">
+            <input type="checkbox" id="toggle-bots">
+            <span class="toggle-switch"></span>
+            <span class="toggle-label">Bots</span>
+        </label>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+        <!-- Recherche globale par catégorie / nom de stat -->
+        <input type="text" id="search-bar" placeholder="Rechercher une statistique..." class="category-search" style="flex: 1; min-width: 250px; margin-bottom: 0;">
+        
+        <!-- Nouvelle barre dédiée pour rechercher un joueur spécifique -->
+        <input type="text" id="player-search-bar" placeholder="Filtrer par pseudo (ex: Steve)..." class="category-search" style="flex: 1; min-width: 250px; margin-bottom: 0;">
+    </div>
+
     <div id="hall-of-fame-container">
-        <!-- Les podiums du Top 3 seront injectés ici dynamiquement -->
+        <!-- Les podiums du Top seront injectés ici dynamiquement -->
     </div>
 
     <script src="hall_of_fame.js" type="module" defer></script>

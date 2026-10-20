@@ -28,11 +28,69 @@
             </label>
         </div>
 
-        <input type="text" id="search-bar" placeholder="Rechercher un joueur...">
-        
-        <ul id="player-list">
-            <li>Chargement des joueurs...</li>
-        </ul>
+        <!-- Section Liste des Joueurs (Réductible) -->
+        <div id="players-section" class="category-section" style="margin-bottom: 30px;">
+            <div class="category-header" id="players-header">
+                <h2 style="margin-bottom: 0;">👥 Liste des Joueurs</h2>
+                <button class="toggle-btn" id="players-toggle-btn">
+                    <span class="toggle-text">Réduire</span>
+                    <span class="toggle-icon">▼</span>
+                </button>
+            </div>
+            <div class="category-content">
+                <input type="text" id="search-bar" placeholder="Rechercher un joueur..." style="margin-top: 20px;">
+                <ul id="player-list" style="margin-top: 10px;">
+                    <li>Chargement des joueurs...</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Section des statistiques et podiums globaux -->
+        <div id="global-records-section" style="display: flex; flex-direction: column; gap: 30px;">
+            
+            <!-- Statistiques Custom Clés du Serveur (Réductible) -->
+            <div id="custom-stats-section" class="category-section">
+                <div class="category-header" id="custom-stats-header">
+                    <h2 style="margin-bottom: 0;">🌍 Statistiques Clés du Serveur</h2>
+                    <button class="toggle-btn" id="custom-stats-toggle-btn">
+                        <span class="toggle-text">Réduire</span>
+                        <span class="toggle-icon">▼</span>
+                    </button>
+                </div>
+                <div class="category-content">
+                    <div id="custom-server-stats-grid" class="flat-stats-grid" style="justify-content: center; margin-top: 10px;">
+                        <p style="color: #a8a8b3; text-align: center; width: 100%;">Calcul des statistiques clés...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top 3 par Catégorie (Réductible) -->
+            <div class="category-section" id="top-categories-section">
+                <div class="category-header" id="top-categories-header">
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-right: 15px;">
+                        <h2 style="margin-bottom: 0;">🏆 Classement Serveur par Catégorie</h2>
+                        <div onclick="event.stopPropagation();" style="display: flex; align-items: center; gap: 8px;">
+                            <label for="top-limit-input" style="font-size: 0.85rem; color: #a8a8b3;">Afficher le top :</label>
+                            <input type="number" id="top-limit-input" value="5" min="1" max="1000" class="category-search" style="margin-bottom: 0; width: 80px; padding: 6px 10px; font-size: 0.85rem; text-align: center;">
+                        </div>
+                    </div>
+                    <button class="toggle-btn" id="top-categories-toggle-btn">
+                        <span class="toggle-text">Réduire</span>
+                        <span class="toggle-icon">▼</span>
+                    </button>
+                </div>
+                <div class="category-content">
+                    
+                    <!-- NOUVELLE BARRE DE RECHERCHE GLOBALE POUR TOUTES LES CATÉGORIES -->
+                    <input type="text" id="global-categories-search" placeholder="Rechercher un item/statistique dans toutes les catégories..." class="category-search">
+
+                    <div id="global-records-grid" class="category-grid" style="margin-top: 10px;">
+                        <p style="color: #a8a8b3; text-align: center; width: 100%;">Calcul des tops du serveur...</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
 
         <script src="script.js" type="module"></script>
         
