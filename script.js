@@ -1,48 +1,27 @@
-import { getData, statsCategories, minecraft_custom_categories, formaterNombre, formaterLabel, minecraftStatsUnits, convertStatValue } from './api.js';
+import { getCachedData, statsCategories, minecraft_custom_categories, formaterNombre, formaterLabel, minecraftStatsUnits, convertStatValue, shouldFilterPlayer } from './api.js';
 
-// Récupération de l'état global depuis le localStorage
 let ignoreUnknown = localStorage.getItem("ignoreUnknown") !== "false";
 let ignoreBots = localStorage.getItem("ignoreBots") !== "false";
 let currentTopLimit = 5; 
 
-let globalPlayersData = []; // Stocke la liste brute des joueurs pour le comparateur
+let globalPlayersData = []; 
 
-/**
- * Vérifie si un joueur doit être filtré selon l'état des switchs
- */
-function shouldFilterPlayer(player) {
-    const hasName = player.name && player.name.trim() !== "";
-    const pType = player.playerType; 
-
-    if (ignoreUnknown) {
-        if (!hasName || pType === "unknown") {
-            return true;
-        }
-    }
-
-    if (ignoreBots) {
-        if (pType === "carpet") {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-async function loadPlayers() {
+async function loadMainPage() {
     const listElement = document.getElementById("player-list");
     listElement.innerHTML = "<li>Chargement des données...</li>";
     
-    const res = await getData("stats");
+    // Réalisation des 2 seuls appels API principaux (gérés par le cache du LocalStorage si < 30min)
+    const statsRes = await getCachedData("stats");
+    const hofRes = await getCachedData("hall-of-fame?order=desc");
     
-    if (!res || !res.players) {
-        listElement.innerHTML = `<li class="error">Impossible de récupérer les données.</li>`;
+    if (!statsRes || !statsRes.players) {
+        listElement.innerHTML = `<li class="error">Impossible de récupérer les données des statistiques.</li>`;
         return;
     }
 
-    globalPlayersData = res.players.filter(player => !shouldFilterPlayer(player));
+    globalPlayersData = statsRes.players.filter(player => !shouldFilterPlayer(player, ignoreUnknown, ignoreBots));
 
-    // TRI ALPHABÉTIQUE
+    // Tri alphabétique
     globalPlayersData.sort((a, b) => {
         const nameA = a.name || "zzzz";
         const nameB = b.name || "zzzz";
@@ -89,7 +68,7 @@ async function loadPlayers() {
 }
 
 function processGlobalData(players) {
-    // 1. STATS CUSTOM CLÉS DU SERVEUR
+    // 1. Stats Custom Clés du Serveur
     const customStatsGrid = document.getElementById("custom-server-stats-grid");
     if (customStatsGrid) {
         const importantCustomKeys = [
@@ -162,7 +141,7 @@ function processGlobalData(players) {
         });
     }
 
-    // 2. TOP VARIABLE PAR CATÉGORIE HORS CUSTOM
+    // 2. Top variable par catégorie hors custom
     const recordsGrid = document.getElementById("global-records-grid");
     if (!recordsGrid) return;
 
@@ -310,15 +289,10 @@ function processGlobalData(players) {
     setupGlobalCategoriesSearch();
 }
 
-// ==========================================
-// SYSTÈME DE COMPARAISON DE DEUX JOUEURS
-// ==========================================
 function populateComparatorSelects(players) {
     const datalist = document.getElementById("players-suggestions");
     if (!datalist) return;
-
     datalist.innerHTML = "";
-
     players.forEach(p => {
         const name = p.name || "Inconnu";
         const opt = document.createElement("option");
@@ -347,18 +321,11 @@ function comparePlayers() {
     const p1 = globalPlayersData.find(p => (p.name || "").toLowerCase() === name1.toLowerCase());
     const p2 = globalPlayersData.find(p => (p.name || "").toLowerCase() === name2.toLowerCase());
 
-    if (!p1) {
-        alert(`Le joueur "${name1}" est introuvable.`);
-        return;
-    }
-    if (!p2) {
-        alert(`Le joueur "${name2}" est introuvable.`);
-        return;
-    }
+    if (!p1) { alert(`Le joueur "${name1}" est introuvable.`); return; }
+    if (!p2) { alert(`Le joueur "${name2}" est introuvable.`); return; }
 
     resultsContainer.style.display = "block";
     gridContainer.innerHTML = "";
-    // Configuration pour empiler les catégories en colonne (l'une au-dessus de l'autre)
     gridContainer.style.display = "flex";
     gridContainer.style.flexDirection = "column";
     gridContainer.style.gap = "20px";
@@ -394,12 +361,7 @@ function comparePlayers() {
     const stats1 = getFlattenedStats(p1);
     const stats2 = getFlattenedStats(p2);
 
-    let score1 = 0;
-    let score2 = 0;
-    let wins1Count = 0;
-    let wins2Count = 0;
-    let ties = 0;
-
+    let score1 = 0, score2 = 0, wins1Count = 0, wins2Count = 0, ties = 0;
     const categoriesMap = {};
 
     allStatKeys.forEach(fullKey => {
@@ -428,7 +390,6 @@ function comparePlayers() {
         const statList = categoriesMap[catKey];
         const isCustom = catKey === "custom";
 
-        // Ajout de la classe "collapsed" par défaut pour que la catégorie soit fermée
         const sectionDiv = document.createElement("div");
         sectionDiv.classList.add("category-section", "collapsed");
         sectionDiv.style.marginBottom = "0";
@@ -439,23 +400,16 @@ function comparePlayers() {
         }
 
         const catTitle = statsCategories[catKey] || formaterLabel(catKey);
-
-        let catScore1 = 0;
-        let catScore2 = 0;
+        let catScore1 = 0, catScore2 = 0;
 
         const headerDiv = document.createElement("div");
         headerDiv.classList.add("category-header");
-        
         const headerTitleEl = document.createElement("h2");
         if (isCustom) headerTitleEl.style.color = "#04d361";
 
         const toggleBtn = document.createElement("button");
         toggleBtn.classList.add("toggle-btn");
-        // Texte mis à "Développer" par défaut puisque la section est fermée
-        toggleBtn.innerHTML = `
-            <span class="toggle-text">Développer</span>
-            <span class="toggle-icon">▼</span>
-        `;
+        toggleBtn.innerHTML = `<span class="toggle-text">Développer</span><span class="toggle-icon">▼</span>`;
 
         headerDiv.appendChild(headerTitleEl);
         headerDiv.appendChild(toggleBtn);
@@ -474,20 +428,15 @@ function comparePlayers() {
 
             for (const [subCatName, subCatObj] of Object.entries(minecraft_custom_categories)) {
                 const subStatsArray = [];
-
                 for (const [key, label] of Object.entries(subCatObj)) {
                     const rawKeyShort = key.replace("minecraft:", "");
                     const foundItem = statList.find(i => i.statKey === key || i.statKey === rawKeyShort || i.statKey === `custom/${rawKeyShort}`);
-
-                    if (foundItem) {
-                        subStatsArray.push({ label, foundItem });
-                    }
+                    if (foundItem) subStatsArray.push({ label, foundItem });
                 }
 
                 if (subStatsArray.length > 0) {
                     const statsCardDiv = document.createElement("div");
                     statsCardDiv.classList.add("stats_div");
-
                     const statsCardTitle = document.createElement("h2");
                     statsCardTitle.textContent = subCatName;
                     statsCardDiv.appendChild(statsCardTitle);
@@ -497,9 +446,7 @@ function comparePlayers() {
                         const converted1 = convertStatValue(cleanKey, foundItem.val1);
                         const converted2 = convertStatValue(cleanKey, foundItem.val2);
                         let unit = ' ' + (minecraftStatsUnits[cleanKey] || '');
-                        if (unit.endsWith('s') && converted1 <= 1 && converted2 <= 1) {
-                            unit = unit.slice(0, -1);
-                        }
+                        if (unit.endsWith('s') && converted1 <= 1 && converted2 <= 1) unit = unit.slice(0, -1);
 
                         const p = document.createElement("p");
                         p.style.display = "flex";
@@ -511,29 +458,13 @@ function comparePlayers() {
                         let head1Html = `<img src="https://minotar.net/helm/${p1.name}/100.png" class="player-avatar-head" alt="">`;
                         let head2Html = `<img src="https://minotar.net/helm/${p2.name}/100.png" class="player-avatar-head" alt="">`;
 
-                        const weight = 2;
-
-                        if (foundItem.val1 > foundItem.val2) {
-                            wins1Count++;
-                            score1 += weight;
-                            catScore1 += weight;
-                            head1Html += " ⭐👑";
-                        } else if (foundItem.val2 > foundItem.val1) {
-                            wins2Count++;
-                            score2 += weight;
-                            catScore2 += weight;
-                            head2Html += " ⭐👑";
-                        } else {
-                            ties++;
-                        }
+                        if (foundItem.val1 > foundItem.val2) { wins1Count++; score1 += 2; catScore1 += 2; head1Html += " ⭐👑"; }
+                        else if (foundItem.val2 > foundItem.val1) { wins2Count++; score2 += 2; catScore2 += 2; head2Html += " ⭐👑"; }
+                        else { ties++; }
 
                         const iconUrl = `https://api.minecraftitems.xyz/api/item/${cleanKey}`;
-
                         p.innerHTML = `
-                            <span style="display:flex; align-items:center; gap:8px;">
-                                <img src="${iconUrl}" class="stat-icon" onerror="this.style.display='none'">
-                                ${label}
-                            </span>
+                            <span style="display:flex; align-items:center; gap:8px;"><img src="${iconUrl}" class="stat-icon" onerror="this.style.display='none'">${label}</span>
                             <span style="display:flex; align-items:center; gap:12px;">
                                 <span>${head1Html} <strong>${formaterNombre(converted1)}${unit}</strong></span>
                                 <span style="color:#7c7c8a">vs</span>
@@ -541,20 +472,12 @@ function comparePlayers() {
                             </span>
                         `;
                         statsCardDiv.appendChild(p);
-
-                        compareSearchItems.push({
-                            element: p,
-                            sectionElement: sectionDiv,
-                            text: label.toLowerCase()
-                        });
+                        compareSearchItems.push({ element: p, sectionElement: sectionDiv, text: label.toLowerCase() });
                     });
-
                     customGrid.appendChild(statsCardDiv);
                 }
             }
-
             contentDiv.appendChild(customGrid);
-
         } else {
             const listContainer = document.createElement("div");
             listContainer.style.display = "flex";
@@ -566,9 +489,7 @@ function comparePlayers() {
                 const converted1 = convertStatValue(item.statKey, item.val1);
                 const converted2 = convertStatValue(item.statKey, item.val2);
                 let unit = ' ' + (minecraftStatsUnits[item.statKey] || '');
-                if (unit.endsWith('s') && converted1 <= 1 && converted2 <= 1) {
-                    unit = unit.slice(0, -1);
-                }
+                if (unit.endsWith('s') && converted1 <= 1 && converted2 <= 1) unit = unit.slice(0, -1);
 
                 const p = document.createElement("p");
                 p.style.display = "flex";
@@ -583,30 +504,14 @@ function comparePlayers() {
                 let head1Html = `<img src="https://minotar.net/helm/${p1.name}/100.png" class="player-avatar-head" alt="">`;
                 let head2Html = `<img src="https://minotar.net/helm/${p2.name}/100.png" class="player-avatar-head" alt="">`;
 
-                const weight = 1;
-
-                if (item.val1 > item.val2) {
-                    wins1Count++;
-                    score1 += weight;
-                    catScore1 += weight;
-                    head1Html += " 👑";
-                } else if (item.val2 > item.val1) {
-                    wins2Count++;
-                    score2 += weight;
-                    catScore2 += weight;
-                    head2Html += " 👑";
-                } else {
-                    ties++;
-                }
+                if (item.val1 > item.val2) { wins1Count++; score1 += 1; catScore1 += 1; head1Html += " 👑"; }
+                else if (item.val2 > item.val1) { wins2Count++; score2 += 1; catScore2 += 1; head2Html += " 👑"; }
+                else { ties++; }
 
                 const cleanKey = item.statKey.replace("custom/", "");
                 const iconUrl = `https://api.minecraftitems.xyz/api/item/${cleanKey}`;
-                
                 p.innerHTML = `
-                    <span style="display:flex; align-items:center; gap:8px;">
-                        <img src="${iconUrl}" class="stat-icon" onerror="this.style.display='none'">
-                        ${labelText}
-                    </span>
+                    <span style="display:flex; align-items:center; gap:8px;"><img src="${iconUrl}" class="stat-icon" onerror="this.style.display='none'">${labelText}</span>
                     <span style="display:flex; align-items:center; gap:15px;">
                         <span>${head1Html} <strong>${formaterNombre(converted1)}${unit}</strong></span>
                         <span style="color:#7c7c8a">vs</span>
@@ -614,25 +519,15 @@ function comparePlayers() {
                     </span>
                 `;
                 listContainer.appendChild(p);
-
-                compareSearchItems.push({
-                    element: p,
-                    sectionElement: sectionDiv,
-                    text: labelText.toLowerCase()
-                });
+                compareSearchItems.push({ element: p, sectionElement: sectionDiv, text: labelText.toLowerCase() });
             });
-
             contentDiv.appendChild(listContainer);
         }
 
         let categoryWinnerHtml = "";
-        if (catScore1 > catScore2) {
-            categoryWinnerHtml = `<span style="font-size: 0.85rem; font-weight: normal; color: #a8a8b3; margin-left: 15px;">Vainqueur : <img src="https://minotar.net/helm/${p1.name}/100.png" class="player-avatar-head" alt=""> <strong>${p1.name}</strong> (${catScore1} pts) 👑</span>`;
-        } else if (catScore2 > catScore1) {
-            categoryWinnerHtml = `<span style="font-size: 0.85rem; font-weight: normal; color: #a8a8b3; margin-left: 15px;">Vainqueur : <img src="https://minotar.net/helm/${p2.name}/100.png" class="player-avatar-head" alt=""> <strong>${p2.name}</strong> (${catScore2} pts) 👑</span>`;
-        } else {
-            categoryWinnerHtml = `<span style="font-size: 0.85rem; font-weight: normal; color: #a8a8b3; margin-left: 15px;">Égalité (${catScore1} partout) 🤝</span>`;
-        }
+        if (catScore1 > catScore2) categoryWinnerHtml = `<span style="font-size: 0.85rem; font-weight: normal; color: #a8a8b3; margin-left: 15px;">Vainqueur : <img src="https://minotar.net/helm/${p1.name}/100.png" class="player-avatar-head" alt=""> <strong>${p1.name}</strong> (${catScore1} pts) 👑</span>`;
+        else if (catScore2 > catScore1) categoryWinnerHtml = `<span style="font-size: 0.85rem; font-weight: normal; color: #a8a8b3; margin-left: 15px;">Vainqueur : <img src="https://minotar.net/helm/${p2.name}/100.png" class="player-avatar-head" alt=""> <strong>${p2.name}</strong> (${catScore2} pts) 👑</span>`;
+        else categoryWinnerHtml = `<span style="font-size: 0.85rem; font-weight: normal; color: #a8a8b3; margin-left: 15px;">Égalité (${catScore1} partout) 🤝</span>`;
 
         headerTitleEl.innerHTML = `${isCustom ? "⭐ " : ""}${catTitle} ${isCustom ? "(Points x2)" : ""} ${categoryWinnerHtml}`;
 
@@ -644,44 +539,32 @@ function comparePlayers() {
     comparatorSearchInput.addEventListener("input", () => {
         const query = comparatorSearchInput.value.toLowerCase().trim();
         const sectionHasVisible = new Map();
-
         compareSearchItems.forEach(item => {
             if (item.text.includes(query)) {
                 item.element.classList.remove("hidden");
                 sectionHasVisible.set(item.sectionElement, true);
             } else {
                 item.element.classList.add("hidden");
-                if (!sectionHasVisible.has(item.sectionElement)) {
-                    sectionHasVisible.set(item.sectionElement, false);
-                }
+                if (!sectionHasVisible.has(item.sectionElement)) sectionHasVisible.set(item.sectionElement, false);
             }
         });
-
         sectionHasVisible.forEach((hasVisible, sectionEl) => {
-            if (query === "" || hasVisible) {
-                sectionEl.classList.remove("hidden");
-            } else {
-                sectionEl.classList.add("hidden");
-            }
+            if (query === "" || hasVisible) sectionEl.classList.remove("hidden");
+            else sectionEl.classList.add("hidden");
         });
     });
 
     let winnerText = "";
-    if (score1 > score2) {
-        winnerText = `🏆 Vainqueur du duel : <strong style="color: #04d361;">${p1.name}</strong> avec un score global pondéré de <strong style="color: #ffffff;">${score1} points</strong> (${wins1Count} stats dominées contre ${wins2Count})`;
-    } else if (score2 > score1) {
-        winnerText = `🏆 Vainqueur du duel : <strong style="color: #04d361;">${p2.name}</strong> avec un score global pondéré de <strong style="color: #ffffff;">${score2} points</strong> (${wins2Count} stats dominées contre ${wins1Count})`;
-    } else {
-        winnerText = `🤝 Égalité parfaite entre <strong style="color: #ffffff;">${p1.name}</strong> et <strong style="color: #ffffff;">${p2.name}</strong> (${score1} partout) !`;
-    }
+    if (score1 > score2) winnerText = `🏆 Vainqueur du duel : <strong style="color: #04d361;">${p1.name}</strong> avec un score global pondéré de <strong style="color: #ffffff;">${score1} points</strong>`;
+    else if (score2 > score1) winnerText = `🏆 Vainqueur du duel : <strong style="color: #04d361;">${p2.name}</strong> avec un score global pondéré de <strong style="color: #ffffff;">${score2} points</strong>`;
+    else winnerText = `🤝 Égalité parfaite entre <strong style="color: #ffffff;">${p1.name}</strong> et <strong style="color: #ffffff;">${p2.name}</strong> (${score1} partout) !`;
 
-    summaryContainer.innerHTML = `${winnerText} <br><span style="font-size:0.85rem; color:#a8a8b3;">(Note : La catégorie Custom est pondérée x2. Égalités globales : ${ties})</span>`;
+    summaryContainer.innerHTML = `${winnerText} <br><span style="font-size:0.85rem; color:#a8a8b3;">(Catégorie Custom pondérée x2. Égalités globales : ${ties})</span>`;
 }
 
 function setupGlobalCategoriesSearch() {
     const globalSearchInput = document.getElementById("global-categories-search");
     if (!globalSearchInput) return;
-
     globalSearchInput.removeEventListener("input", globalSearchHandler);
     globalSearchInput.addEventListener("input", globalSearchHandler);
 }
@@ -689,7 +572,6 @@ function setupGlobalCategoriesSearch() {
 function globalSearchHandler(e) {
     const query = e.target.value.toLowerCase().trim();
     if (!window.allGlobalStatItems) return;
-
     const cardVisibilities = new Map();
 
     window.allGlobalStatItems.forEach(item => {
@@ -699,35 +581,23 @@ function globalSearchHandler(e) {
             cardVisibilities.set(item.cardElement, true);
         } else {
             item.element.classList.add("hidden");
-            if (!cardVisibilities.has(item.cardElement)) {
-                cardVisibilities.set(item.cardElement, false);
-            }
+            if (!cardVisibilities.has(item.cardElement)) cardVisibilities.set(item.cardElement, false);
         }
     });
 
     cardVisibilities.forEach((hasVisibleItems, cardElement) => {
-        if (query === "" || hasVisibleItems) {
-            cardElement.classList.remove("hidden");
-        } else {
-            cardElement.classList.add("hidden");
-        }
+        if (query === "" || hasVisibleItems) cardElement.classList.remove("hidden");
+        else cardElement.classList.add("hidden");
     });
 }
 
 function applySearchFilter() {
     const searchInput = document.getElementById('search-bar');
     if (!searchInput) return;
-
     const filterValue = searchInput.value.toLowerCase().trim();
-    const items = document.querySelectorAll('.item');
-
-    items.forEach(function(item) {
-        const text = item.textContent.toLowerCase();
-        if (text.includes(filterValue)) {
-            item.classList.remove('hidden');
-        } else {
-            item.classList.add('hidden');
-        }
+    document.querySelectorAll('.item').forEach(item => {
+        if (item.textContent.toLowerCase().includes(filterValue)) item.classList.remove('hidden');
+        else item.classList.add('hidden');
     });
 }
 
@@ -743,7 +613,7 @@ function setupEvents() {
         toggleUnknown.addEventListener("change", (e) => {
             ignoreUnknown = !e.target.checked;
             localStorage.setItem("ignoreUnknown", ignoreUnknown);
-            loadPlayers();
+            loadMainPage();
         });
     }
 
@@ -752,13 +622,11 @@ function setupEvents() {
         toggleBots.addEventListener("change", (e) => {
             ignoreBots = !e.target.checked;
             localStorage.setItem("ignoreBots", ignoreBots);
-            loadPlayers();
+            loadMainPage();
         });
     }
 
-    if (searchInput) {
-        searchInput.addEventListener('input', applySearchFilter);
-    }
+    if (searchInput) searchInput.addEventListener('input', applySearchFilter);
 
     if (limitInput) {
         limitInput.value = currentTopLimit;
@@ -766,28 +634,22 @@ function setupEvents() {
             const val = parseInt(e.target.value, 10);
             if (!isNaN(val) && val > 0) {
                 currentTopLimit = val;
-                loadPlayers();
+                loadMainPage();
             }
         });
     }
 
-    if (compareBtn) {
-        compareBtn.addEventListener("click", comparePlayers);
-    }
+    if (compareBtn) compareBtn.addEventListener("click", comparePlayers);
 
-    // Gestion des accordéons globaux (Réduire / Développer)
-    const accordions = [
+    [
         { headerId: "players-header", sectionId: "players-section", btnId: "players-toggle-btn" },
         { headerId: "custom-stats-header", sectionId: "custom-stats-section", btnId: "custom-stats-toggle-btn" },
         { headerId: "top-categories-header", sectionId: "top-categories-section", btnId: "top-categories-toggle-btn" },
         { headerId: "comparator-header", sectionId: "comparator-section", btnId: "comparator-toggle-btn" }
-    ];
-
-    accordions.forEach(acc => {
+    ].forEach(acc => {
         const header = document.getElementById(acc.headerId);
         const section = document.getElementById(acc.sectionId);
         const btn = document.getElementById(acc.btnId);
-
         if (header && section && btn) {
             header.addEventListener("click", () => {
                 const isCollapsed = section.classList.toggle("collapsed");
@@ -798,4 +660,4 @@ function setupEvents() {
 }
 
 setupEvents();
-loadPlayers();
+loadMainPage();

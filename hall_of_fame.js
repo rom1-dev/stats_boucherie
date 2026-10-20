@@ -1,8 +1,8 @@
-import { getData, minecraft_custom_categories, statsCategories, formaterNombre, formaterLabel, convertStatValue, minecraftStatsUnits } from './api.js';
+import { getCachedData, minecraft_custom_categories, statsCategories, formaterNombre, formaterLabel, convertStatValue, minecraftStatsUnits } from './api.js';
 
 let ignoreUnknown = localStorage.getItem("ignoreUnknown") !== "false";
 let ignoreBots = localStorage.getItem("ignoreBots") !== "false";
-let currentHofLimit = 5; // Valeur par défaut pour le top affiché dans le HOF
+let currentHofLimit = 5; 
 
 async function loadHallOfFame() {
     const container = document.getElementById("hall-of-fame-container");
@@ -13,7 +13,8 @@ async function loadHallOfFame() {
         globalMedalsList.innerHTML = "<p style='text-align: center; color: #a8a8b3;'>Chargement du classement...</p>";
     }
 
-    const hof_data = await getData(`hall-of-fame?order=desc&ignoreBots=${ignoreBots}&ignoreUnknown=${ignoreUnknown}`);
+    // Appel unique via le cache local avec les paramètres actuels
+    const hof_data = await getCachedData(`hall-of-fame?order=desc&ignoreBots=${ignoreBots}&ignoreUnknown=${ignoreUnknown}`);
 
     container.innerHTML = "";
 
@@ -24,21 +25,15 @@ async function loadHallOfFame() {
     }
 
     const playersMedals = {};
-    const searchItems = [];          // Pour filtrer par catégorie / item
-    const allCardPlayerFilters = []; // Pour filtrer par pseudo de joueur
+    const searchItems = [];          
+    const allCardPlayerFilters = []; 
 
     for (const statRanking of hof_data.rankings) {
-        if (!statRanking.players || statRanking.players.length === 0) {
-            continue;
-        }
+        if (!statRanking.players || statRanking.players.length === 0) continue;
 
         const activePlayers = statRanking.players.filter(player => (player.value || 0) > 0);
-        
-        if (activePlayers.length === 0) {
-            continue;
-        }
+        if (activePlayers.length === 0) continue;
 
-        // Comptage global des médailles pour le classement général pondéré
         statRanking.players.forEach(player => {
             if ((player.value || 0) > 0) {
                 const uuid = player.uuid;
@@ -61,7 +56,6 @@ async function loadHallOfFame() {
             statTitle = statsCategories[baseCategory];
         } else if (baseCategory === "custom") {
             const statKey = statRanking.stat ? statRanking.stat.replace("minecraft:", "") : (statRanking.path ? statRanking.path.replace("custom/", "") : "");
-            
             let found = false;
             for (const subcategoryObj of Object.values(minecraft_custom_categories)) {
                 if (subcategoryObj[statKey]) {
@@ -70,9 +64,7 @@ async function loadHallOfFame() {
                     break;
                 }
             }
-            if (!found) {
-                statTitle = formaterLabel(statKey);
-            }
+            if (!found) statTitle = formaterLabel(statKey);
         }
 
         const statKeyForUnit = statRanking.stat ? statRanking.stat.replace("minecraft:", "") : (statRanking.path ? statRanking.path.replace("custom/", "") : baseCategory);
@@ -81,9 +73,7 @@ async function loadHallOfFame() {
         let totalUnit = ' ' + (minecraftStatsUnits[statKeyForUnit] || '');
         let convertedTotal = convertStatValue(statKeyForUnit, grandTotalRaw);
 
-        if (totalUnit.endsWith('s') && convertedTotal <= 1) {
-            totalUnit = totalUnit.slice(0, -1);
-        }
+        if (totalUnit.endsWith('s') && convertedTotal <= 1) totalUnit = totalUnit.slice(0, -1);
 
         const cardDiv = document.createElement("div");
         cardDiv.classList.add("stats_div");
@@ -106,7 +96,6 @@ async function loadHallOfFame() {
         playersListContainer.style.gap = "8px";
         cardDiv.appendChild(playersListContainer);
 
-        // Limite dynamique appliquée (ex: top 5, top 148, top 1000...)
         const topPlayers = activePlayers.slice(0, currentHofLimit);
         const cardPlayerItems = [];
 
@@ -115,12 +104,7 @@ async function loadHallOfFame() {
 
         topPlayers.forEach((player, index) => {
             const rawValue = player.value;
-
-            // Gestion des égalités : si la valeur est différente de la précédente, 
-            // le rang devient l'index actuel + 1. Sinon, il garde le même rang que le joueur précédent.
-            if (index === 0 || rawValue !== previousValue) {
-                currentRank = index + 1;
-            }
+            if (index === 0 || rawValue !== previousValue) currentRank = index + 1;
             previousValue = rawValue;
 
             const p = document.createElement("p");
@@ -129,32 +113,23 @@ async function loadHallOfFame() {
             
             let unit = ' ' + (minecraftStatsUnits[statKeyForUnit] || '');
             let convertedValue = convertStatValue(statKeyForUnit, rawValue);
+            if (unit.endsWith('s') && convertedValue <= 1) unit = unit.slice(0, -1);
 
-            if (unit.endsWith('s') && convertedValue <= 1) {
-                unit = unit.slice(0, -1);
-            }
-
-            // Les joueurs à égalité dans le Top 3 partagent la même médaille
             let rankDisplay = "";
             if (currentRank === 1) rankDisplay = "🥇 ";
             else if (currentRank === 2) rankDisplay = "🥈 ";
             else if (currentRank === 3) rankDisplay = "🥉 ";
             else rankDisplay = `#${currentRank} - `;
 
-            const avatarUrl = `https://minotar.net/helm/${playerName}/100.png`;
-
             const a = document.createElement("a");
             a.href = `player.html?uuid=${playerUuid}&name=${playerName}`;
             a.className = "hof-player-link";
 
             const img = document.createElement("img");
-            img.src = avatarUrl;
+            img.src = `https://minotar.net/helm/${playerName}/100.png`;
             img.alt = playerName;
             img.className = "player-avatar-head";
-            img.onerror = function() {
-                this.onerror = null;
-                this.src = "https://minotar.net/helm/MHF_Steve/100.png";
-            };
+            img.onerror = function() { this.onerror = null; this.src = "https://minotar.net/helm/MHF_Steve/100.png"; };
 
             const spanName = document.createElement("span");
             spanName.textContent = playerName;
@@ -174,59 +149,38 @@ async function loadHallOfFame() {
             p.appendChild(strongVal);
             playersListContainer.appendChild(p);
 
-            cardPlayerItems.push({
-                element: p,
-                name: playerName.toLowerCase()
-            });
+            cardPlayerItems.push({ element: p, name: playerName.toLowerCase() });
         });
 
         container.appendChild(cardDiv);
 
-        // Données pour le filtrage par nom de catégorie / item
-        const searchableText = (statTitle + " " + topPlayers.map(p => p.name || "").join(" ")).toLowerCase();
         searchItems.push({
             element: cardDiv,
-            text: searchableText
+            text: (statTitle + " " + topPlayers.map(p => p.name || "").join(" ")).toLowerCase()
         });
 
-        // Données pour le filtrage global par pseudo de joueur
-        allCardPlayerFilters.push({
-            cardElement: cardDiv,
-            players: cardPlayerItems
-        });
+        allCardPlayerFilters.push({ cardElement: cardDiv, players: cardPlayerItems });
     }
 
     renderGlobalMedalsRanking(playersMedals);
 
-    if (container.children.length === 0) {
-        container.innerHTML = "<p class='error' style='text-align: center;'>Aucune donnée disponible pour le Hall of Fame.</p>";
-        return;
-    }
-
-    // 1. Écouteur pour la recherche globale par catégorie / item
     const searchInput = document.getElementById("search-bar");
     if (searchInput) {
         searchInput.addEventListener("input", () => {
             const query = searchInput.value.toLowerCase().trim();
             searchItems.forEach(item => {
-                if (item.text.includes(query)) {
-                    item.element.classList.remove("hidden");
-                } else {
-                    item.element.classList.add("hidden");
-                }
+                if (item.text.includes(query)) item.element.classList.remove("hidden");
+                else item.element.classList.add("hidden");
             });
         });
     }
 
-    // 2. Écouteur pour la recherche globale par pseudo de joueur
     const playerSearchInput = document.getElementById("player-search-bar");
     if (playerSearchInput) {
         playerSearchInput.addEventListener("input", () => {
             const query = playerSearchInput.value.toLowerCase().trim();
-
             allCardPlayerFilters.forEach(cardData => {
                 let hasVisiblePlayer = false;
-
                 cardData.players.forEach(playerObj => {
                     if (!query || playerObj.name.includes(query)) {
                         playerObj.element.classList.remove("hidden");
@@ -235,41 +189,28 @@ async function loadHallOfFame() {
                         playerObj.element.classList.add("hidden");
                     }
                 });
-
-                if (query && !hasVisiblePlayer) {
-                    cardData.cardElement.classList.add("hidden");
-                } else {
-                    cardData.cardElement.classList.remove("hidden");
-                }
+                if (query && !hasVisiblePlayer) cardData.cardElement.classList.add("hidden");
+                else cardData.cardElement.classList.remove("hidden");
             });
         });
     }
 }
 
-/**
- * Génère le rendu visuel du classement général des médailles (score pondéré)
- */
 function renderGlobalMedalsRanking(playersMedalsObj) {
     const globalMedalsList = document.getElementById("global-medals-list");
     if (!globalMedalsList) return;
 
     globalMedalsList.innerHTML = "";
-
-    const playersWithMedals = Object.values(playersMedalsObj).filter(player => 
-        (player.gold + player.silver + player.bronze) > 0
-    );
-
-    const rankingArray = playersWithMedals.sort((a, b) => {
-        const scoreA = (a.gold * 3) + (a.silver * 2) + a.bronze;
-        const scoreB = (b.gold * 3) + (b.silver * 2) + b.bronze;
-
-        if (scoreB !== scoreA) {
-            return scoreB - scoreA;
-        }
-        if (b.gold !== a.gold) return b.gold - a.gold;
-        if (b.silver !== a.silver) return b.silver - a.silver;
-        return b.bronze - a.bronze;
-    });
+    const rankingArray = Object.values(playersMedalsObj)
+        .filter(player => (player.gold + player.silver + player.bronze) > 0)
+        .sort((a, b) => {
+            const scoreA = (a.gold * 3) + (a.silver * 2) + a.bronze;
+            const scoreB = (b.gold * 3) + (b.silver * 2) + b.bronze;
+            if (scoreB !== scoreA) return scoreB - scoreA;
+            if (b.gold !== a.gold) return b.gold - a.gold;
+            if (b.silver !== a.silver) return b.silver - a.silver;
+            return b.bronze - a.bronze;
+        });
 
     if (rankingArray.length === 0) {
         globalMedalsList.innerHTML = "<p style='text-align: center; color: #a8a8b3;'>Aucun joueur n'a obtenu de médaille pour le moment.</p>";
@@ -294,10 +235,7 @@ function renderGlobalMedalsRanking(playersMedalsObj) {
         img.src = `https://minotar.net/helm/${player.name}/100.png`;
         img.alt = player.name;
         img.className = "player-avatar-head";
-        img.onerror = function() {
-            this.onerror = null;
-            this.src = "https://minotar.net/helm/MHF_Steve/100.png";
-        };
+        img.onerror = function() { this.onerror = null; this.src = "https://minotar.net/helm/MHF_Steve/100.png"; };
 
         const spanName = document.createElement("span");
         spanName.textContent = `${index + 1}. ${player.name}`;
@@ -354,7 +292,6 @@ function setupEvents() {
         });
     }
 
-    // Gestion de l'accordéon pour le Classement des Médailles globales
     const medalsHeader = document.getElementById("medals-ranking-header");
     const medalsSection = document.getElementById("global-medals-ranking");
     const medalsToggleBtn = document.getElementById("medals-toggle-btn");

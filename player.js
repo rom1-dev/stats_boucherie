@@ -1,4 +1,4 @@
-import { getData, minecraft_custom_categories, minecraftStatsUnits, convertStatValue, formaterNombre, formaterLabel, formaterPseudo, statsCategories } from './api.js';
+import { getCachedData, minecraft_custom_categories, minecraftStatsUnits, convertStatValue, formaterNombre, formaterLabel, formaterPseudo, statsCategories, shouldFilterPlayer } from './api.js';
 
 let ignoreUnknown = localStorage.getItem("ignoreUnknown") !== "false";
 let ignoreBots = localStorage.getItem("ignoreBots") !== "false";
@@ -20,24 +20,37 @@ async function loadPlayerProfile() {
 
     titleElement.textContent = `Stats ${formaterPseudo(playerName)}`;
 
-    // Images du skin
+    // Images Minotar du skin
     document.getElementById("skin-avatar").src = `https://minotar.net/helm/${playerName}/100.png`;
     document.getElementById("skin-iso").src = `https://minotar.net/cube/${playerName}/100.png`;
     document.getElementById("skin-body").src = `https://minotar.net/armor/body/${playerName}/150.png`;
     document.getElementById("skin-bust").src = `https://minotar.net/armor/bust/${playerName}/150.png`;
     document.getElementById("skin").src = `https://minotar.net/skin/${playerName}`;
 
-    // Calcul et affichage des médailles en fonction des filtres actuels
-    await calculateAndDisplayMedals(playerUuid);
+    // Récupération des données globales depuis le cache pour éviter les appels individuels répétés
+    const statsRes = await getCachedData("stats");
+    const hofRes = await getCachedData("hall-of-fame?order=desc");
 
-    // Vider les anciennes stats si on recharge suite à un changement de filtre
+    if (!statsRes || !statsRes.players) {
+        statsDiv.innerHTML = "<p class='error'>Impossible de charger les statistiques.</p>";
+        return;
+    }
+
+    const playerObj = statsRes.players.find(p => p.uuid === playerUuid);
+    if (!playerObj) {
+        statsDiv.innerHTML = "<p class='error'>Joueur introuvable.</p>";
+        return;
+    }
+
+    // Calcul et affichage des médailles depuis le HOF en cache
+    calculateAndDisplayMedalsLocally(playerUuid, hofRes);
+
     statsDiv.innerHTML = "";
 
-    // ==========================================
-    // 1. CATÉGORIE CUSTOM (1 seul appel API & tri)
-    // ==========================================
+    const playerStats = playerObj.stats || {};
+
+    // 1. CATÉGORIE CUSTOM
     const customSection = createCategorySection(statsCategories.custom, false);
-    
     const customSearchInput = document.createElement("input");
     customSearchInput.type = "text";
     customSearchInput.placeholder = `Rechercher dans ${statsCategories.custom.toLowerCase()}...`;
@@ -49,11 +62,8 @@ async function loadPlayerProfile() {
     customSection.contentDiv.appendChild(customGrid);
     statsDiv.appendChild(customSection.sectionDiv);
 
-    const customData = await getData(`players/${playerUuid}/custom`);
-    const customStats = customData && customData.stats ? customData.stats : {};
-
+    const customData = playerStats["minecraft:custom"] || playerStats.custom || {};
     let hasValidCustomStats = false;
-    const customSearchItems = [];
 
     for (const [categoryName, statsList] of Object.entries(minecraft_custom_categories)) {
         const statsCardDiv = document.createElement("div");
@@ -69,16 +79,14 @@ async function loadPlayerProfile() {
             const rawKeyFull = key.startsWith("minecraft:") ? key : `minecraft:${key}`;
             const rawKeyShort = key.replace("minecraft:", "");
             
-            const rawValue = customStats[rawKeyFull] !== undefined ? customStats[rawKeyFull] : (customStats[rawKeyShort] !== undefined ? customStats[rawKeyShort] : 0);
+            const rawValue = customData[rawKeyFull] !== undefined ? customData[rawKeyFull] : (customData[rawKeyShort] !== undefined ? customData[rawKeyShort] : 0);
 
             if (!rawValue || rawValue === 0) continue;
 
             let unit = ' ' + (minecraftStatsUnits[rawKeyShort] || '');
             const value = convertStatValue(rawKeyShort, rawValue);
 
-            if (unit.endsWith('s') && value <= 1) {
-                unit = unit.slice(0, -1);
-            }
+            if (unit.endsWith('s') && value <= 1) unit = unit.slice(0, -1);
 
             statsArray.push({
                 label: label,
@@ -106,9 +114,7 @@ async function loadPlayerProfile() {
                 img.src = iconUrl;
                 img.alt = "";
                 img.className = "stat-icon";
-                img.onerror = function() {
-                    this.style.display = "none";
-                };
+                img.onerror = function() { this.style.display = "none"; };
 
                 const leftContainer = document.createElement("span");
                 leftContainer.style.display = "flex";
@@ -126,11 +132,6 @@ async function loadPlayerProfile() {
                 statP.appendChild(leftContainer);
                 statP.appendChild(strongVal);
                 statsCardDiv.appendChild(statP);
-
-                customSearchItems.push({
-                    element: statP,
-                    text: statData.searchText
-                });
             });
 
             customGrid.appendChild(statsCardDiv);
@@ -139,35 +140,25 @@ async function loadPlayerProfile() {
 
     customSearchInput.addEventListener("input", () => {
         const query = customSearchInput.value.toLowerCase().trim();
-
         customGrid.querySelectorAll(".stats_div").forEach(cardDiv => {
             let hasVisibleStatInCard = false;
-            const statParagraphs = cardDiv.querySelectorAll("p");
-
-            statParagraphs.forEach(statP => {
-                const text = statP.textContent.toLowerCase();
-                if (text.includes(query)) {
+            cardDiv.querySelectorAll("p").forEach(statP => {
+                if (statP.textContent.toLowerCase().includes(query)) {
                     statP.classList.remove("hidden");
                     hasVisibleStatInCard = true;
                 } else {
                     statP.classList.add("hidden");
                 }
             });
-
-            if (hasVisibleStatInCard) {
-                cardDiv.classList.remove("hidden");
-            } else {
-                cardDiv.classList.add("hidden");
-            }
+            if (hasVisibleStatInCard) cardDiv.classList.remove("hidden");
+            else cardDiv.classList.add("hidden");
         });
     });
 
-    if (!hasValidCustomStats) {
-        customSection.sectionDiv.classList.add("hidden");
-    }
+    if (!hasValidCustomStats) customSection.sectionDiv.classList.add("hidden");
 
     // ==========================================
-    // 2. AUTRES CATÉGORIES (Réduites par défaut)
+    // 2. AUTRES CATÉGORIES
     // ==========================================
     for (const [category, title] of Object.entries(statsCategories)) {
         if (category !== "custom") {
@@ -186,22 +177,19 @@ async function loadPlayerProfile() {
             const items = [];
             const statsArray = [];
 
-            const data = await getData(`players/${playerUuid}/${category}`);
-            const { stats } = data;
+            const catData = playerStats[`minecraft:${category}`] || playerStats[category] || {};
 
-            for (const [x, value] of Object.entries(stats || {})) {
+            for (const [x, value] of Object.entries(catData)) {
                 const label = x.replace("minecraft:", "");
-                if (value !== "test") {
-                    hasValidStats = true;
-                    const formattedLabel = formaterLabel(label);
+                hasValidStats = true;
+                const formattedLabel = formaterLabel(label);
 
-                    statsArray.push({
-                        rawKey: label,
-                        label: formattedLabel,
-                        rawValue: Number(value),
-                        text: formattedLabel.toLowerCase()
-                    });
-                }
+                statsArray.push({
+                    rawKey: label,
+                    label: formattedLabel,
+                    rawValue: Number(value),
+                    text: formattedLabel.toLowerCase()
+                });
             }
 
             statsArray.sort((a, b) => b.rawValue - a.rawValue);
@@ -211,14 +199,11 @@ async function loadPlayerProfile() {
                 statItem.classList.add("flat-stat-item");
 
                 const iconUrl = `https://api.minecraftitems.xyz/api/item/${statData.rawKey}`;
-
                 const img = document.createElement("img");
                 img.src = iconUrl;
                 img.alt = "";
                 img.className = "stat-icon";
-                img.onerror = function() {
-                    this.style.display = "none";
-                };
+                img.onerror = function() { this.style.display = "none"; };
 
                 const span = document.createElement("span");
                 span.style.display = "flex";
@@ -242,11 +227,8 @@ async function loadPlayerProfile() {
             searchInput.addEventListener("input", () => {
                 const query = searchInput.value.toLowerCase().trim();
                 items.forEach(item => {
-                    if (item.text.includes(query)) {
-                        item.element.classList.remove("hidden");
-                    } else {
-                        item.element.classList.add("hidden");
-                    }
+                    if (item.text.includes(query)) item.element.classList.remove("hidden");
+                    else item.element.classList.add("hidden");
                 });
             });
 
@@ -258,38 +240,22 @@ async function loadPlayerProfile() {
     }
 }
 
-/**
- * Fonction pour calculer et afficher le nombre de médailles du joueur via le Hall of Fame
- */
-async function calculateAndDisplayMedals(playerUuid) {
+function calculateAndDisplayMedalsLocally(playerUuid, hof_data) {
     const goldEl = document.getElementById("gold-count");
     const silverEl = document.getElementById("silver-count");
     const bronzeEl = document.getElementById("bronze-count");
 
     if (!goldEl || !silverEl || !bronzeEl) return;
 
-    goldEl.textContent = "...";
-    silverEl.textContent = "...";
-    bronzeEl.textContent = "...";
-
-    // Récupération du Hall of Fame avec les filtres globaux actuels
-    const hof_data = await getData(`hall-of-fame?order=desc&ignoreBots=${ignoreBots}&ignoreUnknown=${ignoreUnknown}`);
-
     if (!hof_data || !hof_data.rankings) {
-        goldEl.textContent = "0";
-        silverEl.textContent = "0";
-        bronzeEl.textContent = "0";
+        goldEl.textContent = "0"; silverEl.textContent = "0"; bronzeEl.textContent = "0";
         return;
     }
 
-    let gold = 0;
-    let silver = 0;
-    let bronze = 0;
+    let gold = 0, silver = 0, bronze = 0;
 
     for (const statRanking of hof_data.rankings) {
         if (!statRanking.players || statRanking.players.length === 0) continue;
-
-        // On regarde les joueurs du top (rang 1, 2, 3)
         statRanking.players.forEach(player => {
             if (player.uuid === playerUuid && (player.value || 0) > 0) {
                 if (player.rank === 1) gold++;
@@ -307,9 +273,7 @@ async function calculateAndDisplayMedals(playerUuid) {
 function createCategorySection(titleText, startCollapsed = false) {
     const sectionDiv = document.createElement("div");
     sectionDiv.classList.add("category-section");
-    if (startCollapsed) {
-        sectionDiv.classList.add("collapsed");
-    }
+    if (startCollapsed) sectionDiv.classList.add("collapsed");
 
     const headerDiv = document.createElement("div");
     headerDiv.classList.add("category-header");
@@ -347,7 +311,7 @@ function setupEvents() {
         toggleUnknown.addEventListener("change", (e) => {
             ignoreUnknown = !e.target.checked;
             localStorage.setItem("ignoreUnknown", ignoreUnknown);
-            loadPlayerProfile(); // Recharge les stats et recalcule les médailles dynamiquement
+            loadPlayerProfile();
         });
     }
 
@@ -356,7 +320,7 @@ function setupEvents() {
         toggleBots.addEventListener("change", (e) => {
             ignoreBots = !e.target.checked;
             localStorage.setItem("ignoreBots", ignoreBots);
-            loadPlayerProfile(); // Recharge les stats et recalcule les médailles dynamiquement
+            loadPlayerProfile();
         });
     }
 }
