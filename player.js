@@ -27,9 +27,9 @@ async function loadPlayerProfile() {
     document.getElementById("skin-bust").src = `https://minotar.net/armor/bust/${playerName}/150.png`;
     document.getElementById("skin").src = `https://minotar.net/skin/${playerName}`;
 
-    // Récupération des données globales depuis le cache pour éviter les appels individuels répétés
+    // Récupération des données globales et du HOF filtré selon les réglages actuels
     const statsRes = await getCachedData("stats");
-    const hofRes = await getCachedData("hall-of-fame?order=desc");
+    const hofRes = await getCachedData(`hall-of-fame?order=desc&ignoreBots=${ignoreBots}&ignoreUnknown=${ignoreUnknown}`);
 
     if (!statsRes || !statsRes.players) {
         statsDiv.innerHTML = "<p class='error'>Impossible de charger les statistiques.</p>";
@@ -42,7 +42,7 @@ async function loadPlayerProfile() {
         return;
     }
 
-    // Calcul et affichage des médailles depuis le HOF en cache
+    // Calcul et affichage des médailles en tenant compte des filtres actifs
     calculateAndDisplayMedalsLocally(playerUuid, hofRes);
 
     statsDiv.innerHTML = "";

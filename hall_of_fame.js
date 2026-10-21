@@ -13,7 +13,7 @@ async function loadHallOfFame() {
         globalMedalsList.innerHTML = "<p style='text-align: center; color: #a8a8b3;'>Chargement du classement...</p>";
     }
 
-    // Appel unique via le cache local avec les paramètres actuels
+    // Appel unique via le cache local unifié
     const hof_data = await getCachedData(`hall-of-fame?order=desc&ignoreBots=${ignoreBots}&ignoreUnknown=${ignoreUnknown}`);
 
     container.innerHTML = "";
@@ -99,17 +99,12 @@ async function loadHallOfFame() {
         const topPlayers = activePlayers.slice(0, currentHofLimit);
         const cardPlayerItems = [];
 
-        let currentRank = 1;
-        let previousValue = null;
-
-        topPlayers.forEach((player, index) => {
-            const rawValue = player.value;
-            if (index === 0 || rawValue !== previousValue) currentRank = index + 1;
-            previousValue = rawValue;
-
+        topPlayers.forEach((player) => {
             const p = document.createElement("p");
             const playerUuid = player.uuid;
             const playerName = player.name || "Joueur Inconnu...";
+            const currentRank = player.rank;
+            const rawValue = player.value;
             
             let unit = ' ' + (minecraftStatsUnits[statKeyForUnit] || '');
             let convertedValue = convertStatValue(statKeyForUnit, rawValue);
