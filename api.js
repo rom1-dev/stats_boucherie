@@ -1,6 +1,6 @@
 export const BASE_URL = "https://laboucheriedepapi.fr/minecraft-stats/v1/";
 
-const apiKey = "romainlegoat1234";
+import { apiKey } from "./_local_api_key.js";
 
 // Temps d'expiration du cache en millisecondes (30 minutes)
 export const CACHE_DURATION_MS = 30 * 60 * 1000; 
