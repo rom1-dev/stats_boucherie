@@ -23,8 +23,8 @@ async function loadMainPage() {
 
     // Tri alphabétique
     globalPlayersData.sort((a, b) => {
-        const nameA = a.name || "zzzz";
-        const nameB = b.name || "zzzz";
+        const nameA = a.name !== "Joueur Inconnu..." ? a.name : "zzzz";
+        const nameB = b.name !== "Joueur Inconnu..." ? b.name : "zzzz";
         return nameA.localeCompare(nameB, 'fr', { sensitivity: 'base' });
     });
 

@@ -69,10 +69,6 @@
                 <div class="category-header" id="top-categories-header">
                     <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-right: 15px;">
                         <h2 style="margin-bottom: 0;">🏆 Classement Serveur par Catégorie</h2>
-                        <div onclick="event.stopPropagation();" style="display: flex; align-items: center; gap: 8px;">
-                            <label for="top-limit-input" style="font-size: 0.85rem; color: #a8a8b3;">Afficher le top :</label>
-                            <input type="number" id="top-limit-input" value="5" min="1" max="1000" class="category-search" style="margin-bottom: 0; width: 80px; padding: 6px 10px; font-size: 0.85rem; text-align: center;">
-                        </div>
                     </div>
                     <button class="toggle-btn" id="top-categories-toggle-btn">
                         <span class="toggle-text">Réduire</span>
@@ -80,6 +76,10 @@
                     </button>
                 </div>
                 <div class="category-content">
+                    <div onclick="event.stopPropagation();" style="display: flex; align-items: center; gap: 8px;">
+                        <label for="top-limit-input" style="font-size: 0.85rem; color: #a8a8b3;">Afficher le top :</label>
+                        <input type="number" id="top-limit-input" value="5" min="1" max="1000" class="category-search" style="margin-bottom: 10px; width: 80px; padding: 6px 10px; font-size: 0.85rem; text-align: center;">
+                    </div>
                     
                     <!-- NOUVELLE BARRE DE RECHERCHE GLOBALE POUR TOUTES LES CATÉGORIES -->
                     <input type="text" id="global-categories-search" placeholder="Rechercher un item/statistique dans toutes les catégories..." class="category-search">

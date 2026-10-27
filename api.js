@@ -178,7 +178,13 @@ export async function getCachedData(endpoint) {
             const playerMap = new Map();
 
             data.players.forEach(player => {
-                const nameKey = player.name ? player.name.trim().toLowerCase() : "";
+                const playerName = player.name ? player.name.trim() : "";
+                const isUnknown = playerName === "" || playerName.toLowerCase() === "joueur inconnu...";
+                
+                // Si le joueur est inconnu, on lui donne une clé unique (basée sur son UUID) 
+                // pour éviter la fusion de tous les inconnus entre eux.
+                const nameKey = isUnknown ? `unknown_${player.uuid || Math.random()}` : playerName.toLowerCase();
+                
                 if (!nameKey) return;
 
                 if (playerMap.has(nameKey)) {
@@ -294,7 +300,7 @@ export const minecraft_custom_categories = {
     "Déplacements": { "walk_one_cm": "Distance marchée", "sprint_one_cm": "Distance sprintée", "aviate_one_cm": "Distance en Élytre", "fly_one_cm": "Distance volée", "boat_one_cm": "Distance en bateau", "horse_one_cm": "Distance à cheval", "strider_one_cm": "Distance en Strider", "minecart_one_cm": "Distance en wagonnet", "climb_one_cm": "Distance grimpée", "crouch_one_cm": "Distance accroupie", "fall_one_cm": "Distance de chute", "happy_ghast_one_cm": "Distance en Happy Ghast" },
     "Milieu Aquatique": { "swim_one_cm": "Distance nagée", "walk_under_water_one_cm": "Distance marchée sous l'eau", "walk_on_water_one_cm": "Distance marchée sur l'eau", "fish_caught": "Poissons pêchés" },
     "Combat & Cœurs": { "damage_dealt": "Dégâts infligés", "mob_kills": "Créatures tuées", "player_kills": "Joueurs tués", "damage_taken": "Dégâts subis", "damage_blocked_by_shield": "Dégâts bloqués par un bouclier", "damage_absorbed": "Dégâts absorbés", "damage_resisted": "Dégâts résistés", "damage_dealt_absorbed": "Dégâts sur absorption", "target_hit": "Cibles touchées", "raid_win": "Raids gagnés", "raid_trigger": "Raids déclenchés" },
-    "Interactions & Blocs": { "interact_with_smithing_table": "Interactions avec une table de forge", "enchant_item": "Objets enchantés", "interact_with_crafting_table": "Interactions avec une table de craft", "interact_with_stonecutter": "Interactions avec un tailleur de pierre", "interact_with_furnace": "Interactions avec un four", "interact_with_smoker": "Interactions avec un fumoir", "interact_with_campfire": "Interactions avec un feu de camp", "interact_with_brewingstand": "Interactions avec un alambic", "interact_with_loom": "Interactions avec un métier à tisser", "interact_with_anvil": "Interactions avec une enclume", "interact_with_cartography_table": "Interactions avec une table de cartographie", "interact_with_grindstone": "Interactions avec une meule", "interact_with_blast_furnace": "Interactions avec un haut-fourneau", "interact_with_lectern": "Interactions avec un pupitre" },
+    "Interactions": { "interact_with_smithing_table": "Interactions avec une table de forge", "enchant_item": "Objets enchantés", "interact_with_crafting_table": "Interactions avec une table de craft", "interact_with_stonecutter": "Interactions avec un tailleur de pierre", "interact_with_furnace": "Interactions avec un four", "interact_with_smoker": "Interactions avec un fumoir", "interact_with_campfire": "Interactions avec un feu de camp", "interact_with_brewingstand": "Interactions avec un alambic", "interact_with_loom": "Interactions avec un métier à tisser", "interact_with_anvil": "Interactions avec une enclume", "interact_with_cartography_table": "Interactions avec une table de cartographie", "interact_with_grindstone": "Interactions avec une meule", "interact_with_blast_furnace": "Interactions avec un haut-fourneau", "interact_with_lectern": "Interactions avec un pupitre" },
     "Stockage": { "open_chest": "Coffres ouverts", "open_shulker_box": "Boîtes de Shulker ouvertes", "open_enderchest": "Coffres de l'Ender ouverts", "open_barrel": "Tonneaux ouverts", "inspect_hopper": "Entonnoirs inspectés", "inspect_dispenser": "Distributeurs inspectés", "inspect_dropper": "Droppeurs inspectés" },
     "Vie quotidienne & PNJ": { "traded_with_villager": "Échanges avec des villageois", "talked_to_villager": "Discussions avec des villageois", "animals_bred": "Animaux reproduits", "pot_flower": "Fleurs mises en pot", "clean_banner": "Bannières nettoyées", "use_cauldron": "Chaudrons utilisés", "fill_cauldron": "Chaudrons remplis", "play_record": "Disques de musique joués", "play_noteblock": "Blocs musicaux joués", "tune_noteblock": "Blocs musicaux accordés", "bell_ring": "Cloches sonnées", "eat_cake_slice": "Parts de gâteau mangées", "interact_with_beacon": "Interactions avec une balise" }
 };
