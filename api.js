@@ -323,5 +323,7 @@ export const unknown_uuids = [
     { "uuid": "94cd7b7d-641d-31fd-81db-a4c35f78d2a6", "pseudo": "zerland_", "playerType": "player" },
     { "uuid": "97f0dbac-7ca4-36ae-8d3c-60f7f2283ab6", "pseudo": "LawDust", "playerType": "player" },
     { "uuid": "efc9febd-ec12-3ed6-b5fb-67b66e102da6", "pseudo": "Dartouf", "playerType": "player" },
-    { "uuid": "fe595550-51b2-329b-b201-d733b1a60c41", "pseudo": "Bontork", "playerType": "player" }
+    { "uuid": "fe595550-51b2-329b-b201-d733b1a60c41", "pseudo": "Bontork", "playerType": "player" },
+    // not sure
+    { "uuid": "1d6c0fd3-2d65-38a4-906a-d1789aba455f", "pseudo": "remshaw", "playerType": "player" }
 ];
